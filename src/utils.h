@@ -25,12 +25,12 @@ enum {INFO, WARN, FATAL};
  * la ejecución del programa.
  */
 #define LOG(level, ...)	{ \
-							printf("%s\n", err_str(level)), \
-                            printf(__VA_ARGS__), \
-                            printf("\n"); \
+							fprintf(stderr, "%s\n", err_str(level)), \
+                            fprintf(stderr, __VA_ARGS__), \
+                            fprintf(stderr, "\n"); \
                             if (level == FATAL || level == WARN) { \
-                            	printf("Archivo: %s\n", __FILE__); \
-								printf("Linea  : %d\n", __LINE__); \
+                            	fprintf(stderr, "Archivo: %s\n", __FILE__); \
+								fprintf(stderr, "Linea  : %d\n", __LINE__); \
 								perror("Error  "); \
                             }; \
                             if (level == FATAL) \
@@ -44,25 +44,9 @@ enum {INFO, WARN, FATAL};
 void *xmalloc(size_t size);
 
 /*
- * Elimina los caracteres de espacio
- * que estén al inicio y final de la
- * cadena.
- */
-void str_trim(char *str);
-
-/*
- * Separa la cadena str en dos pezados,
- * separando en la primera ocurrencia
- * de delim y ubicando las partes en part1
- * y part2. Si no se encuentra el delimitador
- * Se retorna str en part1 y en part2 se
- * retorna NULL.
- */ 
-void str_split(char *str, char *delim, char *part1, char *part2);
-
-/*
  * Verifica si una cadena dada está compuesta
- * únicamente por digitos.
+ * únicamente por digitos (0-9), es decir, si
+ * la cadena representa un numero entero positivo.
  */
 bool is_number(char *str);
 
