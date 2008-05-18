@@ -51,14 +51,25 @@ void matrix_print(matrix_t *mat) {
 }
 
 void matrix_fill(matrix_t *mat) {
-	const static int divisor = MATRIX_ELEM_TYPE_MAX - MATRIX_ELEM_TYPE_MIN + 1;
+	//const static int divisor = MATRIX_ELEM_TYPE_MAX - MATRIX_ELEM_TYPE_MIN + 1;
 	int i, j;
+	static bool first_time = true;
 	
-	srand(time(NULL));
+	/*
+	 * Solo inicializamos la semilla
+	 * en la primera llamada.
+	 */
+	if (first_time) {
+		srand(time(NULL));
+		first_time = false;
+	}
     
+	/*
+	 * Cargamos la matriz con digitos decimales
+	 */
 	for (i=0; i < matrix_rows(mat); i++)
     for (j=0; j < matrix_cols(mat); j++)
-        matrix_ref(mat, i, j) = rand() % divisor;
+        matrix_ref(mat, i, j) = (matrix_elem_type) (10.0 * (rand() / (RAND_MAX + 1.0)));
 }
 
 void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
