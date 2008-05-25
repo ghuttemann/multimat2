@@ -30,9 +30,9 @@ typedef struct {
 	matrix_t *matrix_b;
 	matrix_t *matrix_c;
 	int row_begin;
-	int row_end;
+	int row_count;
 	int col_begin;
-	int col_end;
+	int col_count;
 } matrix_mult_args;
 
 /*
@@ -61,7 +61,7 @@ void matrix_fill(matrix_t *mat);
  * Multiplica dos matrices.
  */
 void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
-				 int row_begin, int row_end, int col_begin, int col_end);
+				 int row_begin, int row_count, int col_begin, int col_count);
 
 /*
  * Obtiene el numero de filas de un objeto 
