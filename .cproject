@@ -56,6 +56,7 @@
 <option id="gnu.c.link.option.noshared.402767807" name="No shared libraries (-static)" superClass="gnu.c.link.option.noshared"/>
 <option id="gnu.c.link.option.libs.609932648" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
 <listOptionValue builtIn="false" value="pthread"/>
+<listOptionValue builtIn="false" value="m"/>
 </option>
 <option id="gnu.c.link.option.paths.507974009" name="Library search path (-L)" superClass="gnu.c.link.option.paths"/>
 <option id="gnu.c.link.option.ldflags.1418737853" name="Linker flags" superClass="gnu.c.link.option.ldflags"/>
@@ -72,10 +73,10 @@
 </tool>
 <tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.550725008" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug"/>
 <tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.1586527577" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
-<option id="gnu.both.asm.option.flags.1188776720" superClass="gnu.both.asm.option.flags"/>
-<option id="gnu.both.asm.option.include.paths.422835870" superClass="gnu.both.asm.option.include.paths"/>
-<option id="gnu.both.asm.option.warnings.nowarn.307596169" superClass="gnu.both.asm.option.warnings.nowarn"/>
-<option id="gnu.both.asm.option.version.662694575" superClass="gnu.both.asm.option.version"/>
+<option id="gnu.both.asm.option.flags.1188776720" name="Assembler flags" superClass="gnu.both.asm.option.flags"/>
+<option id="gnu.both.asm.option.include.paths.422835870" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
+<option id="gnu.both.asm.option.warnings.nowarn.307596169" name="Suppress warnings (-W)" superClass="gnu.both.asm.option.warnings.nowarn"/>
+<option id="gnu.both.asm.option.version.662694575" name="Announce version (-v)" superClass="gnu.both.asm.option.version"/>
 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.94859934" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 </tool>
 </toolChain>
