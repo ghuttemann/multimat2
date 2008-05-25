@@ -7,9 +7,9 @@
  * Tipo de dato para los
  * elementos de una matriz.
  */
-typedef unsigned short int matrix_elem_type;
+typedef unsigned int matrix_elem_type;
 #define MATRIX_ELEM_TYPE_MIN 0
-#define MATRIX_ELEM_TYPE_MAX USHRT_MAX
+#define MATRIX_ELEM_TYPE_MAX UINT_MAX
 
 /*
  * Tipo de dato matriz.
