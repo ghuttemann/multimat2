@@ -200,7 +200,7 @@ void *matrix_mult_thread(void *args) {
 	matrix_mult_args *aux = (matrix_mult_args *) args;
 	
 	matrix_mult(aux->matrix_a, aux->matrix_b, aux->matrix_c, 
-				aux->row_begin, aux->row_end, aux->col_begin, aux->col_end);
+				aux->row_begin, aux->row_count, aux->col_begin, aux->col_count);
 	
 	pthread_exit((void *) 0);
 }
@@ -223,11 +223,11 @@ void distrib_1d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 		
 		// A cada uno se asigna rows_count filas
 		arguments[i].row_begin = i * rows_count;
-		arguments[i].row_end   = arguments[i].row_begin + rows_count - 1;
+		arguments[i].row_count = rows_count;
 		
 		// A cada uno se asignan todas las columnas
 		arguments[i].col_begin = 0;
-		arguments[i].col_end   = matrix_cols(mat_c) - 1;
+		arguments[i].col_count = matrix_cols(mat_c);
 	}
 	
 	/*
@@ -235,7 +235,7 @@ void distrib_1d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 	 * son asignadas al último hilo.
 	 */
 	if (remainder_rows > 0)
-		arguments[thread_count - 1].row_end += remainder_rows;
+		arguments[thread_count - 1].row_count += remainder_rows;
 }
 
 void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c, 
@@ -261,11 +261,11 @@ void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 			
 			// A cada uno se asigna rows_count filas
 			arguments[k].row_begin = i * rows_count;
-			arguments[k].row_end   = arguments[k].row_begin + rows_count - 1;
+			arguments[k].row_count = rows_count;
 			
 			// A cada uno se asignan todas las columnas
 			arguments[k].col_begin = j * cols_count;
-			arguments[k].col_end   = arguments[k].col_begin + cols_count - 1;
+			arguments[k].col_count = cols_count;
 			
 			++k;
 		}
@@ -275,7 +275,7 @@ void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 		 * son asignadas al hilo en cuestión.
 		 */
 		if (remainder_cols > 0)
-			arguments[k].col_end += remainder_cols;
+			arguments[k].col_count += remainder_cols;
 	}
 	
 	/*
@@ -286,7 +286,7 @@ void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 	if (remainder_rows > 0) {
 		k = thread_count - thread_count_sqrt;
 		while (k < thread_count) {
-			arguments[k].row_end += remainder_rows;
+			arguments[k].row_count += remainder_rows;
 			++k;
 		}
 	}

@@ -73,7 +73,7 @@ void matrix_fill(matrix_t *mat) {
 }
 
 void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
-				 int row_begin, int row_end, int col_begin, int col_end) {
+				 int row_begin, int row_count, int col_begin, int col_count) {
 	
 	int i=0, j=0, k=0, k_end=0;
 	
@@ -84,8 +84,8 @@ void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
 	
 	k_end = matrix_cols(a) - 1;
 	
-	for (i=row_begin; i <= row_end; i++)
-	for (j=col_begin; j <= col_end; j++)
+	for (i=row_begin; i < (row_begin + row_count); i++)
+	for (j=col_begin; j < (col_begin + col_count); j++)
 	for (k=0; k <= k_end; k++)
 		matrix_ref(c, i, j) += matrix_val(a, i, k) * matrix_val(b, k, j);
 }
