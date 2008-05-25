@@ -18,3 +18,16 @@ bool is_number(char *str) {
 	
 	return true;
 }
+
+bool es_cuadrado_perfecto(int numero) {
+	if (numero < 0)
+		return false;
+	
+	double raiz_decimal = sqrt(numero);
+	double raiz_entera  = trunc(raiz_decimal);
+	
+	if (raiz_decimal == raiz_entera)
+		return true;
+	
+	return false;
+}
