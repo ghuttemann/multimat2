@@ -10,8 +10,8 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include <math.h>
 #include <pthread.h>
-#include <sqlite3.h>
 
 /*
  * Niveles de errores.
@@ -45,10 +45,25 @@ void *xmalloc(size_t size);
 
 /*
  * Verifica si una cadena dada está compuesta
- * únicamente por digitos (0-9), es decir, si
- * la cadena representa un numero entero positivo.
+ * únicamente por digitos decimales (0-9), 
+ * es decir, si la cadena representa un numero 
+ * entero positivo.
  */
 bool is_number(char *str);
+
+/*
+ * Verifica si un número entero es un cuadrado perfecto.
+ * 
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Un cuadrado perfecto es un número cuya raíz cuadrada 
+ * es un número entero.
+ * Formalmente, x es un cuadrado perfecto si sqrt(x) 
+ * pertenece al conjunto de los números enteros.
+ * 
+ * Fuente: http://es.wikipedia.org/wiki/Cuadrado_perfecto
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ */
+bool es_cuadrado_perfecto(int numero);
 
 /*
  * Wrapper para la función xmalloc. Es útil
