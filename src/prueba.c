@@ -16,7 +16,7 @@ void test_simple() {
     printf("\ntest_simple\n");
     
     matrix_create(&mat, 2, 2);
-    matrix_print(mat, stdout);
+    matrix_print(mat);
     
     srand(time(NULL));
     for (i=0; i < matrix_rows(mat); i++)
@@ -24,7 +24,7 @@ void test_simple() {
         matrix_ref(mat, i, j) = rand() / 1333.33;
     
     printf("\n");
-    matrix_print(mat, stdout);
+    matrix_print(mat);
     matrix_destroy(mat);
 }
 
@@ -63,9 +63,9 @@ void test_mult() {
     matrix_ref(b, 3, 1) = 3;
     
     // Print matrices A, B
-    matrix_print(a, stdout);
+    matrix_print(a);
     printf("\n");
-    matrix_print(b, stdout);
+    matrix_print(b);
     
     // Multiply matrices A, B
     matrix_mult(a, b, c, 0, 0, 0, 1);
@@ -74,7 +74,7 @@ void test_mult() {
     
     // Print matrix C
     printf("\n");
-    matrix_print(c, stdout);
+    matrix_print(c);
     
     // Destroy matrices A, B, C
     matrix_destroy(a);

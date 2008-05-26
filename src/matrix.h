@@ -48,10 +48,9 @@ void matrix_create(matrix_t **mat, int nrows, int ncols);
 void matrix_destroy(matrix_t *mat);
 
 /*
- * Imprime un objeto del tipo matrix_t en
- * el archivo "destino".
+ * Imprime un objeto del tipo matrix_t.
  */
-void matrix_print(matrix_t *mat, FILE *destino);
+void matrix_print(matrix_t *mat);
 
 /*
  * Carga una matriz con valores aleatorios.

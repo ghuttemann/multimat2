@@ -23,11 +23,8 @@ void como_usar(void) {
 	exit(0);
 }
 
-void set_params(param_t *params, int argc, char **argv, bool *thread_count_read) {
+void set_params(param_t *params, int argc, char **argv) {
 	bool condicion = false;
-	bool matrix_a_sizes_read = false;
-	bool matrix_b_sizes_read = false;
-	bool distrib_type_read   = false;
 	
 	if (argc == 1) {
 		// Ejemplo secuencial
@@ -38,10 +35,10 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 		params->thread_count = 0;
 		params->distrib_type = 1;
 		
-		matrix_a_sizes_read = true;
-		matrix_b_sizes_read = true;
-		*thread_count_read  = false;
-		distrib_type_read   = false;
+		params->matrix_a_sizes_read = true;
+		params->matrix_b_sizes_read = true;
+		params->thread_count_read  = false;
+		params->distrib_type_read  = false;
 		
 		condicion = true;
 	}
@@ -66,20 +63,12 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 					if (strcmp(argv[i], "-a") == 0) {
 						params->matrix_a_fil = atoi(argv[i + 1]);
 						params->matrix_a_col = atoi(argv[i + 2]);
-						
-						if (params->matrix_a_fil == 0 || params->matrix_a_col == 0)
-							matrix_a_sizes_read = false;
-						else
-							matrix_a_sizes_read = true;
+						params->matrix_a_sizes_read = true;
 					}
 					else {
 						params->matrix_b_fil = atoi(argv[i + 1]);
 						params->matrix_b_col = atoi(argv[i + 2]);
-						
-						if (params->matrix_b_fil == 0 || params->matrix_b_col == 0)
-							matrix_b_sizes_read = false;
-						else
-							matrix_b_sizes_read = true;
+						params->matrix_b_sizes_read = true;
 					}
 					
 					// Avanzamos el indice
@@ -96,16 +85,12 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 				 */
 				condicion = (i + 1 < argc) &&
 							is_number(argv[i + 1]) &&
-							matrix_a_sizes_read &&
-							matrix_b_sizes_read;
+							params->matrix_a_sizes_read &&
+							params->matrix_b_sizes_read;
 
 				if (condicion) {
 					params->thread_count = atoi(argv[i + 1]);
-					
-					if (params->thread_count == 0)
-						(*thread_count_read) = false;
-					else
-						(*thread_count_read) = true;
+					params->thread_count_read = true;
 					
 					// Avanzamos el indice
 					i += 1;
@@ -121,11 +106,11 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 				 */
 				condicion = (i + 1 < argc) &&
 							is_number(argv[i + 1]) &&
-							(*thread_count_read);
+							params->thread_count_read;
 
 				if (condicion) {
 					params->distrib_type = atoi(argv[i + 1]);
-					distrib_type_read = true;
+					params->distrib_type_read = true;
 					
 					// Avanzamos el indice
 					i += 1;
@@ -163,10 +148,8 @@ void adjust_thread_count(param_t *params) {
 	 * No crearemos una cantidad de hilos
 	 * mayor que MAX_THREADS.
 	 */
-	if (params->thread_count > MAX_THREADS) {
+	if (params->thread_count > MAX_THREADS)
 		params->thread_count = MAX_THREADS;
-		LOG(INFO, "Cantidad de hilos ajustada a %d", params->thread_count);
-	}
 	
 	
 	/*
@@ -189,7 +172,6 @@ void adjust_thread_count(param_t *params) {
 		 * piso).
 		 */
 		params->thread_count = (int) sqrt(params->matrix_a_fil);
-		LOG(INFO, "Cantidad de hilos ajustada a %d", params->thread_count);
 	}
 	else if (params->distrib_type == 2 && condicion2) {
 		/* 
@@ -211,7 +193,6 @@ void adjust_thread_count(param_t *params) {
 							   matrix_b_col_sqrt;
 		
 		params->thread_count *= params->thread_count;
-		LOG(INFO, "Cantidad de hilos ajustada a %d", params->thread_count);
 	}
 }
 
@@ -309,31 +290,4 @@ void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 			++k;
 		}
 	}
-}
-
-void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c) {
-	FILE *archivo;
-	
-	if ((archivo = fopen(OUTPUT_FILE, "w")) == NULL) {
-		LOG(WARN, "Error al abrir archivo de salida \"%s\". %s", 
-				OUTPUT_FILE, "Las matrices no se imprimirán.");
-		return;
-	}
-	
-	fprintf(archivo, "Matriz A\n");
-	matrix_print(mat_a, archivo);
-	fprintf(archivo, "\n");
-	fflush(archivo);
-
-	fprintf(archivo, "Matriz B\n");
-	matrix_print(mat_b, archivo);
-	fprintf(archivo, "\n");
-	fflush(archivo);
-
-	fprintf(archivo, "Matriz C\n");
-	matrix_print(mat_c, archivo);
-	fprintf(archivo, "\n");
-	fflush(archivo);
-	
-	fclose(archivo);
 }
