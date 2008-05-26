@@ -18,6 +18,12 @@
 #define SIZE_EXAMPLE 3
 
 /*
+ * Nombre del archivo de salida, en
+ * el que se imprimiran las matrices.
+ */
+#define OUTPUT_FILE "matrix-mult_output.txt"
+
+/*
  * Tipo de datos que agrupa
  * los parametros del programa.
  */
@@ -25,10 +31,6 @@ typedef struct {
 	int matrix_a_fil, matrix_a_col;
 	int matrix_b_fil, matrix_b_col;
 	int thread_count, distrib_type;
-	bool matrix_a_sizes_read;
-	bool matrix_b_sizes_read;
-	bool thread_count_read;
-	bool distrib_type_read;
 } param_t;
 
 /*
@@ -42,7 +44,7 @@ void como_usar(void);
  * los almacena en la estructura de
  * parametros.
  */
-void set_params(param_t *params, int argc, char **argv);
+void set_params(param_t *params, int argc, char **argv, bool *thread_count_read);
 
 /*
  * Ajusta la cantidad de hilos a una
@@ -74,3 +76,9 @@ void distrib_1d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
  */
 void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c, 
 		int thread_count, matrix_mult_args *arguments);
+
+/*
+ * Imprime las matrices de entrada y salida en un
+ * archivo de texto.
+ */
+void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c);
