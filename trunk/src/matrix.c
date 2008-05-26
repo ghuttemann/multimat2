@@ -39,14 +39,14 @@ void matrix_destroy(matrix_t *mat) {
     free(mat);
 }
 
-void matrix_print(matrix_t *mat) {
+void matrix_print(matrix_t *mat, FILE *destino) {
     int i, j;
     
     for (i=0; i < matrix_rows(mat); i++) {
         for (j=0; j < matrix_cols(mat); j++) {
-            printf("%d\t", matrix_val(mat, i, j));
+            fprintf(destino, "%d\t", matrix_val(mat, i, j));
         }
-        printf("\n");
+        fprintf(destino, "\n");
     }
 }
 
