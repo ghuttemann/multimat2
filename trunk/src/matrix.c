@@ -5,7 +5,7 @@ void matrix_create(matrix_t **mat, int nrows, int ncols) {
     
     // Chequeo de rangos
     if (nrows <= 0 || ncols <= 0)
-        LOG(FATAL, "%s: %s", __func__, "El número de filas y/o columnas debe ser positivo.");
+        LOG(FATAL, "%s(): %s", __func__, "El número de filas y/o columnas debe ser positivo.");
     
     // Asignación de memoria para matrix_t
     (*mat) = GET_MEM(matrix_t, 1);
@@ -78,7 +78,7 @@ void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
 	int i=0, j=0, k=0, k_end=0;
 	
 	if (matrix_cols(a) != matrix_rows(b))
-		LOG(FATAL, "%s: %s %s", __func__, 
+		LOG(FATAL, "%s(): %s %s", __func__, 
 				"El número de columnas de la matriz A debe ser igual a",
 				"el númbero de filas de la matriz B");
 	
