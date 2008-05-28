@@ -10,6 +10,9 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include <sys/time.h>
+#include <unistd.h>
+
 #include <math.h>
 #include <pthread.h>
 
@@ -25,7 +28,7 @@ enum {INFO, WARN, FATAL};
  * la ejecución del programa.
  */
 #define LOG(level, ...)	{ \
-							fprintf(stderr, "%s\n", err_str(level)), \
+							fprintf(stderr, "%s: ", err_str(level)), \
                             fprintf(stderr, __VA_ARGS__), \
                             fprintf(stderr, "\n"); \
                             if (level == FATAL || level == WARN) { \
@@ -70,5 +73,35 @@ bool es_cuadrado_perfecto(int numero);
  * ya que no se requiere realizar cast.
  */
 #define GET_MEM(type, blocks) (type *) xmalloc(blocks * sizeof(type))
+
+/*
+ * Función que retorna el tiempo transcurrido
+ * desde Epoch (ver time(2)).
+ * La unidad de medida está en "milisegundos".
+ */
+long long get_time_millis(void);
+
+/* 
+ * Tipo de dato para guardar
+ * registros de tiempo.
+ */
+typedef struct {
+	long long begin;
+	long long end;
+} time_rec_t;
+
+/*
+ * Macros para facilitar el control de
+ * tiempo.
+ */
+#define TIME_BEGIN(x)  x.begin = get_time_millis()
+#define TIME_END(x)    x.end   = get_time_millis()
+#define TIME_DIFF(x)   (x.end - x.begin)
+
+/*
+ * Conversión de un número a double. Normalmente
+ * útil para realizar divisiones.
+ */
+#define DOUBLE(x) ((double) x)
 
 #endif /*UTILS_H_*/
