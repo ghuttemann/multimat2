@@ -7,15 +7,23 @@ int main(int argc, char **argv) {
 	matrix_t *mat_a, *mat_b, *mat_c;
 	int i;
 	param_t params = {0};
-	bool thread_count_read;
+	bool thread_count_read = false;
+	bool print_output = true;
+	
+	// Variables para control de tiempo
+	time_rec_t tiempo_total_multip    = {0};
+	time_rec_t tiempo_total_partit    = {0};
+	time_rec_t tiempo_total_thr_creat = {0};
+	time_rec_t tiempo_total_thr_exec  = {0};
+	
 	
 	/*
 	 * Verificamos si se pasó como argumento
 	 * algún archivo de configuración, y 
 	 * cargamos los parámentros de configuración.
 	 */
-	LOG(INFO, "Configurando parámetros del programa.");
-	set_params(&params, argc, argv, &thread_count_read);
+	set_params(&params, argc, argv, &thread_count_read, &print_output);
+	
 
 	/*
 	 * Verificamos que la cantidad de columnas
@@ -41,8 +49,11 @@ int main(int argc, char **argv) {
 	matrix_fill(mat_b);
 	
 	
+	// Inicio control de tiempo total de multiplicación.
+	TIME_BEGIN(tiempo_total_multip);
+	
 	if (thread_count_read) {
-		LOG(INFO, "Multiplicación concurrente con %d hilos.", params.thread_count);
+		LOG(INFO, "Multiplicación concurrente con %d hilo(s).", params.thread_count);
 		
 		/*
 		 * Multiplicación concurrentemente. La cantidad
@@ -50,39 +61,69 @@ int main(int argc, char **argv) {
 		 */
 		adjust_thread_count(&params);
 		
-		/*
-		 * Creación de hilos
-		 */
-		LOG(INFO, "Creando hilos.");
-		pthread_t *threads = GET_MEM(pthread_t, params.thread_count);
-		matrix_mult_args *arguments = GET_MEM(matrix_mult_args, params.thread_count);
 		
 		/*
 		 * Realizar distribución de matrices
 		 */
 		LOG(INFO, "Realizando particionamiento de datos %dd.", params.distrib_type);
+		
+		// Inicio control de tiempo total de particionamiento.
+		TIME_BEGIN(tiempo_total_partit);
+		
+		matrix_mult_args *arguments = GET_MEM(matrix_mult_args, params.thread_count);
 		if (params.distrib_type == 1)
 			distrib_1d(mat_a, mat_b, mat_c, params.thread_count, arguments);
 		else
 			distrib_2d(mat_a, mat_b, mat_c, params.thread_count, arguments);
 		
+		// Fin control de tiempo total de particionamiento.
+		TIME_END(tiempo_total_partit);
+		
 		/*
-		 * Lanzar los hilos.
+		 * Creación de hilos
 		 */
-		LOG(INFO, "Lanzando hilos.");
-		for (i=0; i < params.thread_count; i++)
-			pthread_create(&threads[i], NULL, matrix_mult_thread, &arguments[i]);
+		LOG(INFO, "Creando hilos.");
+		
+		// Inicio control de tiempo total de ejecución de hilos.
+		TIME_BEGIN(tiempo_total_thr_exec);
+		
+		// Inicio control de tiempo total de creación de hilos.
+		TIME_BEGIN(tiempo_total_thr_creat);
+		
+		pthread_t *threads = GET_MEM(pthread_t, params.thread_count);
+		for (i=0; i < params.thread_count; i++) {
+			int rc = pthread_create(&threads[i], NULL, 
+								matrix_mult_thread, &arguments[i]);
+			
+			if (rc != 0)
+				LOG(FATAL, "Error en creación del hilo '%d'", i);
+		}
+		
+		// Fin control de tiempo total de creación de hilos.
+		TIME_END(tiempo_total_thr_creat);
 		
 		/*
 		 * Esperar a los hilos.
 		 */
-		for (i=0; i < params.thread_count; i++)
-			pthread_join(threads[i], NULL);
+		for (i=0; i < params.thread_count; i++) {
+			int rc = pthread_join(threads[i], NULL);
+			
+			if (rc != 0)
+				LOG(FATAL, "Error en 'join' del hilo '%d'", i);
+		}
+		
+		// Fin control de tiempo total de ejecución de hilos.
+		TIME_END(tiempo_total_thr_exec);
+		
+		/*
+		 * Imprimimos las particiones de los hilos.
+		 */
+		print_partitions(arguments, params.thread_count);
 		
 		/*
 		 * Realizar limpieza
 		 */
-		LOG(INFO, "Liberando memoria de hilos.");
+		LOG(INFO, "Liberando memoria de hilos.");		
 		free(threads);
 		free(arguments);
 	}
@@ -90,15 +131,34 @@ int main(int argc, char **argv) {
 		/*
 		 * Multiplicación secuencial.
 		 */
+		LOG(INFO, "Multiplicación secuencial.");
 		matrix_mult(mat_a, mat_b, mat_c, 
 					0, matrix_rows(mat_c) - 1, 
 					0, matrix_cols(mat_c) - 1);
 	}
 	
+	// Fin control de tiempo total de multiplicación.
+	TIME_END(tiempo_total_multip);
+	
+	/*
+	 * Imprimimos los tiempos obtenidos.
+	 */
+	printf("\n");
+	print_times(tiempo_total_multip, 
+				tiempo_total_partit, 
+				tiempo_total_thr_creat, 
+				tiempo_total_thr_exec,
+				params.thread_count);
+	printf("\n");
+	
 	/*
 	 * Imprimir las matrices
 	 */
-	print_matrices(mat_a, mat_b, mat_c);
+	if (print_output) {
+		LOG(INFO, "Imprimiendo matrices.");
+		print_matrices(mat_a, mat_b, mat_c);
+	}
+	
 	
 	/*
 	 * Destruimos las matrices.
