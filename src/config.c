@@ -3,15 +3,16 @@
 void como_usar(void) {
 	printf("Modo de uso:\n");
 	printf("\n");
-	printf("    matrix-mult [-a fil col -b fil col [-h hilos [-t part]]]\n");
+	printf("    matrix-mult [-a fil col -b fil col [-h hilos [-t part]] [-ni]]\n");
 	printf("\n");
 	printf("Opciones:\n");
-	printf("    (sin opciones imprime una multiplicación de ejemplo)\n");
+	printf("    (sin opciones se imprime una multiplicación de ejemplo)\n");
 	printf("\n");
 	printf("    a fil col : cantidad de filas y columnas de la matriz A\n");
 	printf("    b fil col : cantidad de filas y columnas de la matriz B\n");
 	printf("    h hilos   : cantidad de hilos (0 por defecto)\n");
 	printf("    t part    : tipo de particionamiento (1 por defecto)\n");
+	printf("    ni        : no imprimir\n");
 	printf("\n");
 	printf("Argumentos:\n");
 	printf("\n");
@@ -23,11 +24,16 @@ void como_usar(void) {
 	exit(0);
 }
 
-void set_params(param_t *params, int argc, char **argv, bool *thread_count_read) {
+void set_params(param_t *params, int argc, char **argv, bool *thread_count_read,
+				bool *print_output) {
+	
 	bool condicion = false;
 	bool matrix_a_sizes_read = false;
 	bool matrix_b_sizes_read = false;
 	bool distrib_type_read   = false;
+	
+	*thread_count_read = false;
+	*print_output      = true;
 	
 	if (argc == 1) {
 		// Ejemplo secuencial
@@ -45,7 +51,7 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 		
 		condicion = true;
 	}
-	else if (argc == MIN_ARGS_COUNT + 1 || argc == MAX_ARGS_COUNT + 1) {
+	else if (argc >= MIN_ARGS_COUNT + 1 && argc <= MAX_ARGS_COUNT + 1) {
 		/*
 		 * Procesamos los argumentos pasados
 		 * por línea de comandos.
@@ -143,6 +149,13 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read)
 						condicion = false;
 				}
 			}
+			else if (strcmp(argv[i], "-ni") == 0) {
+				/*
+				 * No imprimiremos las matrices como
+				 * salida del programa.
+				 */
+				*print_output = false;
+			}
 			
 			if (!condicion)
 				break;
@@ -172,11 +185,11 @@ void adjust_thread_count(param_t *params) {
 	/*
 	 * Verificaciones adicionales.
 	 */
-	bool condicion1 = params->matrix_a_fil < params->thread_count;
+	bool condicion1 = (params->matrix_a_fil) < (params->thread_count);
 	
 	int thread_count_sqrt = (int) sqrt(params->thread_count);
-	bool condicion2 = params->matrix_a_fil < thread_count_sqrt ||
-					  params->matrix_b_col < thread_count_sqrt;
+	bool condicion2 = (params->matrix_a_fil) < (thread_count_sqrt) ||
+					  (params->matrix_b_col) < (thread_count_sqrt);
 	
 	
 	if (params->distrib_type == 1 && condicion1) {
@@ -312,10 +325,10 @@ void distrib_2d(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c,
 }
 
 void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c) {
-	FILE *archivo;
+	FILE *archivo = NULL;
 	
 	if ((archivo = fopen(OUTPUT_FILE, "w")) == NULL) {
-		LOG(WARN, "Error al abrir archivo de salida \"%s\". %s", 
+		LOG(WARN, "Error al abrir archivo de matrices \"%s\". %s", 
 				OUTPUT_FILE, "Las matrices no se imprimirán.");
 		return;
 	}
@@ -334,6 +347,74 @@ void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c) {
 	matrix_print(mat_c, archivo);
 	fprintf(archivo, "\n");
 	fflush(archivo);
+	
+	fclose(archivo);
+}
+
+void print_times(time_rec_t tiempo_total_multip, time_rec_t tiempo_total_partit,
+			time_rec_t tiempo_total_thr_creat, time_rec_t tiempo_total_thr_exec,
+			int thread_count) {
+	
+	FILE *archivo = NULL;
+	
+	/*
+	 * Impresión en la salida estándar
+	 */
+	fprintf(stdout, "Cantidad de Hilos (CH)...................%d\n", thread_count);
+	
+	fprintf(stdout, "Tiempo Total Multiplicación (TTM)........%lld\n", 
+			TIME_DIFF(tiempo_total_multip));
+	fprintf(stdout, "Tiempo Total Particionamiento (TTP)......%lld\n", 
+			TIME_DIFF(tiempo_total_partit));
+	fprintf(stdout, "Tiempo Total Creación Hilos (TTCH).......%lld\n", 
+			TIME_DIFF(tiempo_total_thr_creat));
+	fprintf(stdout, "Tiempo Total Ejecución Hilos (TTEH)......%lld\n", 
+			TIME_DIFF(tiempo_total_thr_exec));
+
+	fprintf(stdout, "Tiempo Promedio Creación Hilos (TPCH)....%f\n",
+			TIME_DIFF(tiempo_total_thr_creat) / DOUBLE(thread_count));
+	fprintf(stdout, "Tiempo Promedio Ejecución Hilos (TPEH)...%f\n",
+			TIME_DIFF(tiempo_total_thr_exec) / DOUBLE(thread_count));
+
+	/*
+	 * Apertura de archivo
+	 */
+	if ((archivo = fopen(TIMES_FILE, "w")) == NULL) {
+		LOG(WARN, "Error al abrir archivo de tiempos \"%s\". %s", 
+				TIMES_FILE, "Las matrices no se imprimirán.");
+		return;
+	}
+	
+	/*
+	 * Escritura en archivo.
+	 */
+	fprintf(archivo, "CH  \t%d\n", thread_count);
+	fprintf(archivo, "TTM \t%lld\n", TIME_DIFF(tiempo_total_multip));
+	fprintf(archivo, "TTP \t%lld\n", TIME_DIFF(tiempo_total_partit));
+	fprintf(archivo, "TTCH\t%lld\n", TIME_DIFF(tiempo_total_thr_creat));
+	fprintf(archivo, "TTEH\t%lld\n", TIME_DIFF(tiempo_total_thr_exec));
+	
+	fclose(archivo);
+}
+
+void print_partitions(matrix_mult_args *arguments, int thread_count) {
+	FILE *archivo = NULL;
+	int i;
+	
+	/*
+	 * Apertura de archivo
+	 */
+	if ((archivo = fopen(PARTIT_FILE, "w")) == NULL) {
+		LOG(WARN, "Error al abrir archivo de particiones \"%s\". %s", 
+				PARTIT_FILE, "Las matrices no se imprimirán.");
+		return;
+	}
+	
+	fprintf(archivo, "Hilo,FilaIni,FilaCant,ColumIni,ColumCant\n");
+	for (i=0; i < thread_count; i++) {
+		fprintf(archivo, "%d,%d,%d,%d,%d\n", i, arguments[i].row_begin,
+			arguments[i].row_count, arguments[i].col_begin, arguments[i].col_count);
+	}
 	
 	fclose(archivo);
 }
