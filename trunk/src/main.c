@@ -135,8 +135,8 @@ int main(int argc, char **argv) {
 		 */
 		LOG(INFO, "Multiplicación secuencial.");
 		matrix_mult(mat_a, mat_b, mat_c, 
-					0, matrix_rows(mat_c) - 1, 
-					0, matrix_cols(mat_c) - 1);
+					0, matrix_rows(mat_c), 
+					0, matrix_cols(mat_c));
 	}
 	
 	// Fin control de tiempo total de multiplicación.
