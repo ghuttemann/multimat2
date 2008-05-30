@@ -101,7 +101,7 @@ void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c);
  */
 void print_times(time_rec_t tiempo_total_multip, time_rec_t tiempo_total_partit,
 			time_rec_t tiempo_total_thr_creat, time_rec_t tiempo_total_thr_exec,
-			int thread_count);
+			int thread_count, matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c);
 
 /*
  * Imprime las particiones de cada hilo.
