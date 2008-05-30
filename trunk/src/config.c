@@ -2,7 +2,6 @@
 
 void como_usar(void) {
 	printf("Modo de uso:\n");
-	printf("\n");
 	printf("    matrix-mult [-a fil col -b fil col [-h hilos [-t part]] [-ni]]\n");
 	printf("\n");
 	printf("Opciones:\n");
@@ -15,7 +14,6 @@ void como_usar(void) {
 	printf("    ni        : no imprimir\n");
 	printf("\n");
 	printf("Argumentos:\n");
-	printf("\n");
 	printf("    fil   : entero positivo\n");
 	printf("    col   : entero positivo\n");
 	printf("    hilos : entero positivo (cuadrado perfecto si part es 2)\n");
@@ -33,7 +31,7 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read,
 	bool distrib_type_read   = false;
 	
 	*thread_count_read = false;
-	*print_output      = true;
+	*print_output      = true;	// Asumimos que siempre se imprime
 	
 	if (argc == 1) {
 		// Ejemplo secuencial
@@ -112,6 +110,13 @@ void set_params(param_t *params, int argc, char **argv, bool *thread_count_read,
 						(*thread_count_read) = false;
 					else
 						(*thread_count_read) = true;
+					
+					/*
+					 * Por defecto, realizamos un
+					 * particionamiento 1d.
+					 */
+					params->distrib_type = 1;
+					distrib_type_read = true;
 					
 					// Avanzamos el indice
 					i += 1;
@@ -353,13 +358,20 @@ void print_matrices(matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c) {
 
 void print_times(time_rec_t tiempo_total_multip, time_rec_t tiempo_total_partit,
 			time_rec_t tiempo_total_thr_creat, time_rec_t tiempo_total_thr_exec,
-			int thread_count) {
+			int thread_count, matrix_t *mat_a, matrix_t *mat_b, matrix_t *mat_c) {
 	
 	FILE *archivo = NULL;
 	
 	/*
 	 * Impresión en la salida estándar
 	 */
+	fprintf(stdout, "Matriz A (MatA)...%dx%d\n", matrix_rows(mat_a), 
+			matrix_cols(mat_a));
+	fprintf(stdout, "Matriz B (MatB)...%dx%d\n", matrix_rows(mat_b), 
+			matrix_cols(mat_b));
+	fprintf(stdout, "Matriz C (MatC)...%dx%d\n\n", matrix_rows(mat_c), 
+			matrix_cols(mat_c));
+	
 	fprintf(stdout, "Cantidad de Hilos (CH)...................%d\n", thread_count);
 	
 	fprintf(stdout, "Tiempo Total Multiplicación (TTM)........%lld\n", 
@@ -388,6 +400,9 @@ void print_times(time_rec_t tiempo_total_multip, time_rec_t tiempo_total_partit,
 	/*
 	 * Escritura en archivo.
 	 */
+	fprintf(archivo, "MatA\t%dx%d\n", matrix_rows(mat_a), matrix_cols(mat_a));
+	fprintf(archivo, "MatB\t%dx%d\n", matrix_rows(mat_b), matrix_cols(mat_b));
+	fprintf(archivo, "MatC\t%dx%d\n", matrix_rows(mat_c), matrix_cols(mat_c));
 	fprintf(archivo, "CH  \t%d\n", thread_count);
 	fprintf(archivo, "TTM \t%lld\n", TIME_DIFF(tiempo_total_multip));
 	fprintf(archivo, "TTP \t%lld\n", TIME_DIFF(tiempo_total_partit));
