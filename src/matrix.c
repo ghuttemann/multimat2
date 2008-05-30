@@ -51,7 +51,6 @@ void matrix_print(matrix_t *mat, FILE *destino) {
 }
 
 void matrix_fill(matrix_t *mat) {
-	//const static int divisor = MATRIX_ELEM_TYPE_MAX - MATRIX_ELEM_TYPE_MIN + 1;
 	int i, j;
 	static bool first_time = true;
 	
