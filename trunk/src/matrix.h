@@ -8,8 +8,6 @@
  * elementos de una matriz.
  */
 typedef unsigned int matrix_elem_type;
-#define MATRIX_ELEM_TYPE_MIN 0
-#define MATRIX_ELEM_TYPE_MAX UINT_MAX
 
 /*
  * Tipo de dato matriz.
