@@ -73,8 +73,10 @@ int main(int argc, char **argv) {
 		matrix_mult_args *arguments = GET_MEM(matrix_mult_args, params.thread_count);
 		if (params.distrib_type == 1)
 			distrib_1d(mat_a, mat_b, mat_c, params.thread_count, arguments);
-		else
+		else if (params.distrib_type == 2)
 			distrib_2d(mat_a, mat_b, mat_c, params.thread_count, arguments);
+		else
+			LOG(FATAL, "Particionamiento distinto a 1d y 2d");
 		
 		// Fin control de tiempo total de particionamiento.
 		TIME_END(tiempo_total_partit);
@@ -148,7 +150,8 @@ int main(int argc, char **argv) {
 				tiempo_total_partit, 
 				tiempo_total_thr_creat, 
 				tiempo_total_thr_exec,
-				params.thread_count);
+				params.thread_count,
+				mat_a, mat_b, mat_c);
 	printf("\n");
 	
 	/*
