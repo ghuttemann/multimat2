@@ -11,7 +11,7 @@ void como_usar(void) {
 	printf("    b fil col : cantidad de filas y columnas de la matriz B\n");
 	printf("    h hilos   : cantidad de hilos (0 por defecto)\n");
 	printf("    t part    : tipo de particionamiento (1 por defecto)\n");
-	printf("    ni        : no imprimir\n");
+	printf("    ni        : no imprimir las matrices\n");
 	printf("\n");
 	printf("Argumentos:\n");
 	printf("    fil   : entero positivo\n");
