@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 		/*
 		 * Creación de hilos
 		 */
-		LOG(INFO, "Creando hilos.");
+		LOG(INFO, "Ejecutando hilos.");
 		
 		// Inicio control de tiempo total de ejecución de hilos.
 		TIME_BEGIN(tiempo_total_thr_exec);
