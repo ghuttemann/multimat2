@@ -7,13 +7,14 @@
  * Tipo de dato para los
  * elementos de una matriz.
  */
-typedef unsigned int matrix_elem_type;
+typedef unsigned int matrix_elem_t;
+#define MATRIX_ELEM_T_FORMAT "%d"
 
 /*
  * Tipo de dato matriz.
  */
 typedef struct {
-    matrix_elem_type **elements;
+    matrix_elem_t **elements;
     int rows;
     int cols;
 } matrix_t;
