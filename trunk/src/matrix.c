@@ -11,9 +11,9 @@ void matrix_create(matrix_t **mat, int nrows, int ncols) {
     (*mat) = GET_MEM(matrix_t, 1);
     
     // Asignación de memoria para los elementos de la matriz
-    (*mat)->elements = GET_MEM(matrix_elem_type *, nrows);
+    (*mat)->elements = GET_MEM(matrix_elem_t *, nrows);
     for (i=0; i < nrows; i++)
-        (*mat)->elements[i] = GET_MEM(matrix_elem_type, ncols);
+        (*mat)->elements[i] = GET_MEM(matrix_elem_t, ncols);
     
     // Establecer el número de filas y columnas
     (*mat)->rows = nrows;
@@ -44,7 +44,8 @@ void matrix_print(matrix_t *mat, FILE *destino) {
     
     for (i=0; i < matrix_rows(mat); i++) {
         for (j=0; j < matrix_cols(mat); j++) {
-            fprintf(destino, "%d\t", matrix_val(mat, i, j));
+            fprintf(destino, MATRIX_ELEM_T_FORMAT, matrix_val(mat, i, j));
+            fprintf(destino, "\t");
         }
         fprintf(destino, "\n");
     }
@@ -68,7 +69,7 @@ void matrix_fill(matrix_t *mat) {
 	 */
 	for (i=0; i < matrix_rows(mat); i++)
     for (j=0; j < matrix_cols(mat); j++)
-        matrix_ref(mat, i, j) = (matrix_elem_type) (10.0 * (rand() / (RAND_MAX + 1.0)));
+        matrix_ref(mat, i, j) = (matrix_elem_t) (10.0 * (rand() / (RAND_MAX + 1.0)));
 }
 
 void matrix_mult(matrix_t *a, matrix_t *b, matrix_t *c,
