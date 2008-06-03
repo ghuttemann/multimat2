@@ -7,8 +7,13 @@
  * Tipo de dato para los
  * elementos de una matriz.
  */
-typedef unsigned int matrix_elem_t;
-#define MATRIX_ELEM_T_FORMAT "%d"
+#ifdef FLOAT
+    #define matrix_elem_t float
+    #define MATRIX_ELEM_T_FORMAT "%f"
+#else
+    #define matrix_elem_t unsigned int
+    #define MATRIX_ELEM_T_FORMAT "%d"
+#endif
 
 /*
  * Tipo de dato matriz.
