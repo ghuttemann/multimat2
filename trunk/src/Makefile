@@ -5,10 +5,20 @@ LIBS = -lpthread -lm
 FLAGS= -Wall
 
 ##
+## Si se pasa como argumento TYPE=float, entonces
+## se realiza la compilación con números de punto
+## flotante. En caso contrario, la compilación se
+## realiza con número enteros sin signo (unsigned int).
+##
+ifeq ($(TYPE),float)
+  DEF = -DFLOAT
+endif
+
+##
 ## Regla que le dice a Make como "llegar" de un .c a un .o
 ##
 .c.o:
-	gcc $(FLAGS) -c $< -o $@
+	gcc $(DEF) $(FLAGS) -c $< -o $@
 
 ##
 ## Variable que contiene la lista de modulos que componen nuestro "proyecto"
@@ -43,11 +53,8 @@ matrix-mult: $(modulos)
 ##
 ## El target clean suele existir para "remover" los archivos temporales
 ## y el archivo que se genera como producto del proyecto.
-##
-## El - delante quiere decir que si el comando falla, Make continua; no
-## falla.  El @ delante quiere decir que no muestre (que no haga echo) de
-## los comandos que esta ejecutando.
 ## 
 clean:
 	rm -f *.o
 	rm -f matrix-mult
+	rm -f matrix-mult.exe
