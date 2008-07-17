@@ -26,35 +26,25 @@ void matrix_print(element_t *mat, int n, FILE *output);
 void matrix_fill(element_t *mat, int n);
 
 /*
+ * Pone a cero todos los elementos de la matriz.
+ */
+void matrix_clear(element_t *mat, int n);
+
+/*
  * Calcula la traspuesta de una matriz
  */
 void matrix_traspose(element_t *mat, int n);
 
 /*
- * Multiplica dos matrices.
+ * Multiplica dos matrices cuadradas.
  */
-void matrix_mult(element_t *a, element_t *b, element_t *c, int n,
-				 int row_begin, int row_count, int col_begin, int col_count);
+void matrix_mult(element_t *a, element_t *b, element_t *c, int n);
 
 /*
  * Realiza el mapeo de indices de un arreglo
  * de dos dimensiones a un arreglo de una
  * dimensión.
  */
-inline int matrix_map(int ncols, int i, int j);
-
-/*
- * Obtiene el valor del elemento en la
- * posición (row, col) de un objeto del
- * tipo matrix_t.
- */
-#define matrix_val(mat, ncols, row, col) (mat[matrix_map(ncols, row, col)])
-
-/*
- * Obtiene la referencia del elemento en la
- * posición (row, col) de un objeto del
- * tipo matrix_t.
- */
-#define matrix_ref(mat, ncols, row, col) (*(mat + matrix_map(ncols, row, col)))
+#define matrix_map(ncols, fil, col) (ncols * fil + col)
 
 #endif /*MATRIX_H_*/
