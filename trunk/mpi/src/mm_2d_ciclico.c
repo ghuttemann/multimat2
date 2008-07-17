@@ -1,11 +1,32 @@
 #include <mpi.h>
 #include "utils.h"
 #include "matrix.h"
-#include "mm_2d_ciclico.h"
+
+/******************************************************************************
+ ************************** D E F I N I C I O N E S ***************************
+ ******************************************************************************/
+
+#define MIN_COMM_SIZE 2
+#define MPI_ELEMENT_T MPI_FLOAT
 
 /*
- * Función principal
+ * Tipo de dato que representa
+ * una coordenada en 2D.
  */
+typedef struct {
+	int primero, segundo;
+} coord_2d;
+
+void build_message(element_t *, element_t *, element_t *, int, int, int, int);
+int get_matrix_size(int, char **);
+bool check_comm_size(int, int);
+void save_result(element_t *, int, int, element_t *, int, int);
+void multiply(element_t *, element_t *, int, int);
+
+
+/******************************************************************************
+ ********************* F U N C I O N  P R I N C I P A L ***********************
+ ******************************************************************************/
 int main(int argc, char *argv[]) {
 	int i=0, j=0, k=0, rc=0;
 
@@ -267,11 +288,11 @@ int main(int argc, char *argv[]) {
         free(matC);
         free(tareas);
         
-        printf("%s  Tiempo total: %f (%s)  %s", 
-                "\n###################################\n\n", 
+        printf("\n\n%s\n\n  Tiempo total: %f (%s)  \n\n%s\n", 
+                "###################################", 
                 endTime - initTime, 
                 MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
-                "\n\n###################################\n");
+                "###################################");
 	}
 	else if (myRank <= maximo) {
 		/*
@@ -317,6 +338,21 @@ int main(int argc, char *argv[]) {
 	MPI_Exit(EXIT_SUCCESS);
 }
 
+/******************************************************************************
+ ***************************** F U N C I O N E S ******************************
+ ******************************************************************************/
+
+/*
+ * Construye un mensaje correspondiente a una tarea. El mismo es enviado
+ * por el proceso maestro a algún esclavo.
+ *
+ * El mensaje contiene "blkSize" filas de la matriz A y "blkSize" columnas 
+ * de la matriz B.
+ *
+ * Los enteros "posFil" y "posCol" indican, respectivamente, desde qué fila
+ * de la matriz A y desde qué columna de la matriz B debe comenzar a copiarse
+ * en el buffer.
+ */
 void build_message(element_t *buffer, element_t *matA, element_t *matB,
 					int n, int blkSize, int posFil, int posCol) {
 
@@ -333,6 +369,10 @@ void build_message(element_t *buffer, element_t *matA, element_t *matB,
         buffer[k++] = matB[matrix_map(n, j, i)];
 }
 
+/*
+ * Obtiene el tamaño de la matriz desde la línea de argumento. Si el
+ * parámetro es inválido retorna un número negativo.
+ */
 int get_matrix_size(int argc, char *argv[]) {
     int tmp;
     
@@ -345,6 +385,9 @@ int get_matrix_size(int argc, char *argv[]) {
     return -1;
 }
 
+/*
+ * Verifica que el tamaño del comunicador no sea menor al mínimo permitido. 
+ */
 bool check_comm_size(int realSize, int minSize) {
 	if (realSize < minSize)
         return false;
@@ -352,6 +395,10 @@ bool check_comm_size(int realSize, int minSize) {
     return true;
 }
 
+/*
+ * Guarda los resultados calculados en la correspondiente ubicación 
+ * de la matriz C.
+ */
 void save_result(element_t *matC, int n, int blkSize, element_t *resultado, 
                 int posFil, int posCol) {
 
@@ -365,6 +412,10 @@ void save_result(element_t *matC, int n, int blkSize, element_t *resultado,
 		matC[matrix_map(n, x, y)] = resultado[z++];
 }
 
+/*
+ * Calcula la multiplicación para un bloque
+ * dado de la matriz C.
+ */
 void multiply(element_t *mensaje, element_t *resultado, int n, int blkSize) {
 	// Puntero temporal para bloque A
 	element_t *blkA = mensaje;
