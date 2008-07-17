@@ -18,13 +18,15 @@ OBJ_DIR = ./build
 ## Se puede usar \ para indicar que continua en la siguiente linea (pero
 ## no olvidar poner TAB en la sgte. 
 ##
-modulos = $(OBJ_DIR)/utils.o $(OBJ_DIR)/matrix.o $(OBJ_DIR)/mm_2d_ciclico.o
+modulos     = $(OBJ_DIR)/utils.o $(OBJ_DIR)/matrix.o 
+mod_ciclico = $(OBJ_DIR)/mm_2d_ciclico.o
+mod_cannon  = $(OBJ_DIR)/mm_cannon.o
 
 ## 
 ## Como este es el primer target (all), se elige automaticamente cuando no 
 ## se pasa ningun target a Make. Es costumbre que exista este target.
 ##
-all: mm_2d_ciclico
+all: mm_2d_ciclico mm_cannon
 
 ##
 ## Estas dependencias no se suelen listar "a mano". Se usa una herramienta
@@ -38,14 +40,20 @@ $(OBJ_DIR)/utils.o: utils.c utils.h
 $(OBJ_DIR)/matrix.o: matrix.c matrix.h utils.h
 	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
 
-$(OBJ_DIR)/mm_2d_ciclico.o: mm_2d_ciclico.c mm_2d_ciclico.h matrix.h utils.h
+$(OBJ_DIR)/mm_2d_ciclico.o: mm_2d_ciclico.c matrix.h utils.h
+	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+
+$(OBJ_DIR)/mm_cannon.o: mm_cannon.c matrix.h utils.h
 	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
 
 ##
 ## Con este target construimos el proyecto
 ##
-mm_2d_ciclico: $(modulos)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(LIB_DIR) $(LIBS)
+mm_2d_ciclico: $(modulos) $(mod_ciclico)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_ciclico) $(LIB_DIR) $(LIBS)
+
+mm_cannon: $(modulos) $(mod_cannon)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_cannon) $(LIB_DIR) $(LIBS)
 
 ##
 ## El target clean suele existir para "remover" los archivos temporales
