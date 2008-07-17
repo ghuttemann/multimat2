@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
 		 * tareas, dependiendo de que hayan menos procesos
 		 * que tareas o viceversa.
 		 */
+        double initTime = MPI_Wtime();
 
 		// Comenzamos con el proceso 1.
 		int destino = 1;
@@ -250,6 +251,8 @@ int main(int argc, char *argv[]) {
             MPI_Log(INFO, "Mensaje de finalizacion para proceso %d (%d)", k, rc);
         }
         
+        double endTime = MPI_Wtime();
+        
         // TODO: control tiempo
         if (argc >= 3 && strcmp("p", argv[2]) == 0) {
             matrix_print(matA, matSize, stdout);
@@ -263,6 +266,12 @@ int main(int argc, char *argv[]) {
         free(matB);
         free(matC);
         free(tareas);
+        
+        printf("%s  Tiempo total: %f (%s)  %s", 
+                "\n###################################\n\n", 
+                endTime - initTime, 
+                MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
+                "\n\n###################################\n");
 	}
 	else if (myRank <= maximo) {
 		/*
