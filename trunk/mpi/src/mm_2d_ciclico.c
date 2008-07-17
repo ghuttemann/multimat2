@@ -3,8 +3,6 @@
 #include "matrix.h"
 #include "mm_2d_ciclico.h"
 
-#define matSize 400
-
 /*
  * Función principal
  */
@@ -15,7 +13,7 @@ int main(int argc, char *argv[]) {
 
 	int myRank   = -1; 	// Posicion dentro del comunicador
 	int commSize = 0;	// Tamaño del comunicador
-	//int matSize  = 0; 	// Tamaño de la matriz
+	int matSize  = 0; 	// Tamaño de la matriz
 	int blkSize  = 0; 	// Tamaño del bloque
     int endTag   = 0;   // Numero de tag para finalizar
 
@@ -51,7 +49,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-	/*/ Obtener tamaño de la matriz
+	// Obtener tamaño de la matriz
     if ((matSize = get_matrix_size(argc, argv)) < 0) {
         if (myRank != 0)
             MPI_Exit(1);
@@ -61,7 +59,7 @@ int main(int argc, char *argv[]) {
                     "entero, positivo y cuadrado perfecto",
                     "se recibio", argv[1]);
         }
-    }*/
+    }
     
     /*
      * El tamaño de bloque se calcula en función
@@ -69,6 +67,7 @@ int main(int argc, char *argv[]) {
      * comunicación de más.
      */
     blkSize = (int) sqrt(matSize);
+    
     
     /*
      * El tag de finalización debe ser igual a la cantidad
@@ -96,8 +95,8 @@ int main(int argc, char *argv[]) {
 	int resultSize = matSize;
 
 	// Buffers de envío de mensajes y recepción de resultados.
-	element_t mensaje[buffSize];
-	element_t resultado[resultSize];
+	element_t *mensaje   = GET_MEM(element_t, buffSize);
+	element_t *resultado = GET_MEM(element_t, resultSize);
 
 	/************************************************************************
 	 * Ejecución de los procesos maestro y esclavos.
@@ -108,14 +107,15 @@ int main(int argc, char *argv[]) {
 		 */
 
 		// Matrices A, B y C
-		element_t matA[matSize * matSize];
-		element_t matB[matSize * matSize];
-		element_t matC[matSize * matSize];
+		element_t *matA = GET_MEM(element_t, matSize * matSize);
+		element_t *matB = GET_MEM(element_t, matSize * matSize);
+		element_t *matC = GET_MEM(element_t, matSize * matSize);
 
 		// Rellenar matrices A y B
 		matrix_fill(matA, matSize);
 		matrix_fill(matB, matSize);
-		MPI_Log(INFO, "Matrices A y B creadas");
+        matrix_clear(matC, matSize);
+		MPI_Log(INFO, "Matrices A, B y C creadas");
         
 
 		/*
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 		 * El tamaño de cada bloque es "blkSize"
 		 *
 		 */
-		coord_2d tareas[matSize];
+		coord_2d *tareas = GET_MEM(coord_2d, matSize);
 		k=0;
 		for (i=0; i < matSize; i += blkSize) {
 			for (j=0; j < matSize; j += blkSize) {
@@ -245,6 +245,20 @@ int main(int argc, char *argv[]) {
             
             MPI_Log(INFO, "Mensaje de finalizacion para proceso %d (%d)", k, rc);
         }
+        
+        free(matA);
+        free(matB);
+        free(matC);
+        free(tareas);
+        
+        // TODO: control tiempo
+        if (argc >= 3 && strcmp("p", argv[2]) == 0) {
+            matrix_print(matA, matSize, stdout);
+            printf("\n");
+            matrix_print(matB, matSize, stdout);
+            printf("\n");
+            matrix_print(matC, matSize, stdout);
+        }
 	}
 	else if (myRank <= maximo) {
 		/*
@@ -284,14 +298,8 @@ int main(int argc, char *argv[]) {
         MPI_Log(INFO, "Proceso %d finalizado", myRank);
 	}
     
-    // TAREAS DE FINALIZACION
-    /*
-    matrix_print(matA, matSize, stdout);
-    printf("\n");
-    matrix_print(matB, matSize, stdout);
-    printf("\n");
-    matrix_print(matC, matSize, stdout);
-     */
+    free(mensaje);
+    free(resultado);
 
 	MPI_Exit(EXIT_SUCCESS);
 }
@@ -304,18 +312,18 @@ void build_message(element_t *buffer, element_t *matA, element_t *matB,
 	// Copiar "b" filas de matA
 	for (i=posFil; i < posFil + blkSize; i++)
 	for (j=0; j < n; j++)
-		buffer[k++] = matrix_val(matA, n, i, j);
+		buffer[k++] = matA[matrix_map(n, i, j)];
 
 	// Copiar "b" columnas de matB
 	for (i=posCol; i < posCol + blkSize; i++)
 	for (j=0; j < n; j++)
-		buffer[k++] = matrix_val(matB, n, j, i);
+        buffer[k++] = matB[matrix_map(n, j, i)];
 }
 
 int get_matrix_size(int argc, char *argv[]) {
     int tmp;
     
-	if (argc == 2 && is_positive_integer(argv[1]) && 
+	if (argc >= 2 && is_positive_integer(argv[1]) && 
         is_perfect_square(tmp = atoi(argv[1]))) {
 
 		return tmp;
@@ -341,15 +349,15 @@ void save_result(element_t *matC, int n, int blkSize, element_t *resultado,
 	int x, y, z=0;
 	for (x=posFil; x < posFil + blkSize; x++)
 	for (y=posCol; y < posCol + blkSize; y++)
-		matrix_ref(matC, n, x, y) = resultado[z++];
+		matC[matrix_map(n, x, y)] = resultado[z++];
 }
 
-void multiply(element_t *buffer, element_t *resultado, int n, int blkSize) {
+void multiply(element_t *mensaje, element_t *resultado, int n, int blkSize) {
 	// Puntero temporal para bloque A
-	element_t *blkA = buffer;
+	element_t *blkA = mensaje;
 
 	// Puntero temporal para bloque B
-	element_t *blkB = buffer + (n * blkSize);
+	element_t *blkB = mensaje + (n * blkSize);
 
 	// Multiplicamos los bloques
 	int i, j, k;    
@@ -357,6 +365,6 @@ void multiply(element_t *buffer, element_t *resultado, int n, int blkSize) {
 	for (i=0; i < blkSize; i++)
 	for (j=0; j < blkSize; j++)
 	for (k=0; k < n; k++)
-		matrix_ref(resultado, blkSize, i, j) +=
-			matrix_val(blkA, n, i, k) * matrix_val(blkB, n, k, j);
+		resultado[matrix_map(blkSize, i, j)] +=
+			blkA[matrix_map(n, i, k)] * blkB[matrix_map(n, j, k)];
 }
