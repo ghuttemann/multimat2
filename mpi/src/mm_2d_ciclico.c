@@ -114,8 +114,12 @@ int main(int argc, char *argv[]) {
 		// Rellenar matrices A y B
 		matrix_fill(matA, matSize);
 		matrix_fill(matB, matSize);
+        
+        // Cerar matriz C
         matrix_clear(matC, matSize);
-		MPI_Log(INFO, "Matrices A, B y C creadas");
+        
+        
+        MPI_Log(INFO, "Matrices A, B y C creadas");
         
 
 		/*
@@ -157,7 +161,7 @@ int main(int argc, char *argv[]) {
 
 		// Comenzamos con el proceso 1.
 		int destino = 1;
-
+        
 		/* 
          * Comienza la comunicación.
          * Iteramos sobre las tareas, enviando a los procesos.
@@ -246,11 +250,6 @@ int main(int argc, char *argv[]) {
             MPI_Log(INFO, "Mensaje de finalizacion para proceso %d (%d)", k, rc);
         }
         
-        free(matA);
-        free(matB);
-        free(matC);
-        free(tareas);
-        
         // TODO: control tiempo
         if (argc >= 3 && strcmp("p", argv[2]) == 0) {
             matrix_print(matA, matSize, stdout);
@@ -259,6 +258,11 @@ int main(int argc, char *argv[]) {
             printf("\n");
             matrix_print(matC, matSize, stdout);
         }
+        
+        free(matA);
+        free(matB);
+        free(matC);
+        free(tareas);
 	}
 	else if (myRank <= maximo) {
 		/*
