@@ -308,6 +308,9 @@ int main(int argc, char *argv[]) {
 
 		// Iterar hasta recibir el mensaje de terminación.
 		while (status.MPI_TAG != endTag) {
+            
+            // Cerar matriz resultado
+            matrix_clear(resultado, blkSize);
 
 			// Multiplicar bloque.
 			multiply(mensaje, resultado, matSize, blkSize);
