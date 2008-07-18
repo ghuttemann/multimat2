@@ -23,6 +23,14 @@ enum {INFO, WARN, FATAL};
 #define err_str(e) (e==INFO ? "INFO" : e==WARN ? "WARN" : e==FATAL ? "FATAL" : "UNKNOWN")
 
 /*
+ * Buffer para construir un mensaje de error y
+ * luego imprimirlo en una sola llamada a la
+ * función fprintf.
+ */
+#define ERR_BUFF_SIZE 1024
+char error_buffer[ERR_BUFF_SIZE + 1];
+
+/*
  * Despliega un mensaje de error, advertencia,
  * información, etc., y posiblemente termina
  * la ejecución del programa.
@@ -45,9 +53,10 @@ enum {INFO, WARN, FATAL};
  * MPI_Exit para terminar el programa.
  */
 #define MPI_Log(level, ...)	{ \
-							fprintf(stderr, "%s: ", err_str(level)), \
-                            fprintf(stderr, __VA_ARGS__), \
-                            fprintf(stderr, "\n"); \
+                            sprintf(error_buffer, "%s: ", err_str(level)), \
+                            sprintf(error_buffer + strlen(error_buffer), __VA_ARGS__), \
+                            sprintf(error_buffer + strlen(error_buffer), "\n"), \
+							fprintf(stderr, error_buffer, strlen(error_buffer)); \
                             if (level == FATAL || level == WARN) { \
                             	fprintf(stderr, "Archivo: %s\n", __FILE__); \
 								fprintf(stderr, "Linea  : %d\n", __LINE__); \
