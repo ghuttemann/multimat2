@@ -142,7 +142,8 @@ int main(int argc, char *argv[]) {
         
         MPI_Log(INFO, "Matrices A, B y C creadas");
         
-
+        double initTime = MPI_Wtime();
+        
 		/*
 		 * Construir tareas.
 		 *
@@ -179,7 +180,6 @@ int main(int argc, char *argv[]) {
 		 * tareas, dependiendo de que hayan menos procesos
 		 * que tareas o viceversa.
 		 */
-        double initTime = MPI_Wtime();
 
 		// Comenzamos con el proceso 1.
 		int destino = 1;
