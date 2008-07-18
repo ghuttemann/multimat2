@@ -19,7 +19,6 @@ typedef struct {
 
 void build_message(element_t *, element_t *, element_t *, int, int, int, int);
 int get_matrix_size(int, char **);
-bool check_comm_size(int, int);
 void save_result(element_t *, int, int, element_t *, int, int);
 void multiply(element_t *, element_t *, int, int);
 
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 	 * Verificamos que el tamaño del comunicador
 	 * sea adecuado.
 	 */
-    if (!check_comm_size(commSize, MIN_COMM_SIZE)) {
+    if (commSize < MIN_COMM_SIZE) {
         if (myRank != 0)
             MPI_Exit(1);
         else {
@@ -386,16 +385,6 @@ int get_matrix_size(int argc, char *argv[]) {
 	}
     
     return -1;
-}
-
-/*
- * Verifica que el tamaño del comunicador no sea menor al mínimo permitido. 
- */
-bool check_comm_size(int realSize, int minSize) {
-	if (realSize < minSize)
-        return false;
-    
-    return true;
 }
 
 /*
