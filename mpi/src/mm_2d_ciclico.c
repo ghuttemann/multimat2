@@ -395,6 +395,9 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
 
         MPI_Log(INFO, "Mensaje %d recibido por proceso %d (%d)",
                 status.MPI_TAG, myRank, rc);
+        
+        // Cerar matriz resultado
+        matrix_clear(resultado, blkSize);
 
         // Multiplicar bloque.
         multiply(mensaje, resultado, matSize, blkSize);
