@@ -116,8 +116,7 @@ int main(int argc, char *argv[]) {
 void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C, 
                                 MPI_Comm comm) {
     
-    int i;
-    int nlocal;
+    int i, nlocal, rc1=0, rc2=0;
     int commSize, dims[2], periods[2];
     int myRank, myRank_2d, myCoords[2];
     int upRank, downRank, leftRank, rightRank;
@@ -142,7 +141,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Comm_rank(comm_2d, &myRank_2d);
     MPI_Cart_coords(comm_2d, myRank_2d, 2, myCoords);
 
-    /* Calculamos el rank de los procesos de arriba y de la izquierda */
+    /* Calculamos el rank de los procesos de la izquierda y de arriba */
     MPI_Cart_shift(comm_2d, 0, -1, &rightRank, &leftRank);
     MPI_Cart_shift(comm_2d, 1, -1, &downRank, &upRank);
 
@@ -150,20 +149,20 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     nlocal = N / dims[0];
 
     /* Realizamos el alineamiento inicial de la matriz A */
-    MPI_Cart_shift(comm_2d, 0, -myCoords[0], &shiftSource, &shiftDest);
-    MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
-                        shiftSource, 1, comm_2d, &status);
+    rc1 = MPI_Cart_shift(comm_2d, 0, -myCoords[0], &shiftSource, &shiftDest);
+    rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
+                               shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Alineamiento inicial de matriz A en proceso [%d, %d]", 
-            myCoords[0], myCoords[1]);
+    MPI_Log(INFO, "Alineamiento inicial de matriz A en proceso [%d, %d] (%d %d)", 
+            myCoords[0], myCoords[1], rc1, rc2);
 
     /* Realizamos el alineamiento inicial de la matriz B */
-    MPI_Cart_shift(comm_2d, 1, -myCoords[1], &shiftSource, &shiftDest);
-    MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
-                        shiftSource, 1, comm_2d, &status);
+    rc1 = MPI_Cart_shift(comm_2d, 1, -myCoords[1], &shiftSource, &shiftDest);
+    rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
+                               shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Alineamiento inicial de matriz B en proceso [%d, %d]", 
-            myCoords[0], myCoords[1]);
+    MPI_Log(INFO, "Alineamiento inicial de matriz B en proceso [%d, %d] (%d %d)", 
+            myCoords[0], myCoords[1], rc1, rc2);
 
     
     /* 
@@ -184,38 +183,38 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
          * Enviamos la matriz A desde la izquierda y 
          * la recibimos desde la derecha 
          */
-        MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, leftRank, 1, 
-                            rightRank, 1, comm_2d, &status);
+        rc1 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, leftRank, 1, 
+                                   rightRank, 1, comm_2d, &status);
         
-        MPI_Log(INFO, "Corrimiento de matriz A en proceso [%d, %d]", 
-                myCoords[0], myCoords[1]);
+        MPI_Log(INFO, "Corrimiento de matriz A en proceso [%d, %d] (%d)", 
+                myCoords[0], myCoords[1], rc1);
 
         /* 
          * Enviamos la matriz B hacia arriba y la 
          * recibimos desde abajo 
          */
-        MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, upRank, 1, 
-                            downRank, 1, comm_2d, &status);
+        rc1 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, upRank, 1, 
+                                   downRank, 1, comm_2d, &status);
         
-        MPI_Log(INFO, "Corrimiento de matriz B en proceso [%d, %d]", 
-                myCoords[0], myCoords[1]);
+        MPI_Log(INFO, "Corrimiento de matriz B en proceso [%d, %d] (%d)", 
+                myCoords[0], myCoords[1], rc1);
     }
 
     /* Restauramos la distribución original de la matriz A */
-    MPI_Cart_shift(comm_2d, 0, +myCoords[0], &shiftSource, &shiftDest);
-    MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
-                        shiftSource, 1, comm_2d, &status);
+    rc1 = MPI_Cart_shift(comm_2d, 0, +myCoords[0], &shiftSource, &shiftDest);
+    rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
+                               shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Restaurar distribucion inicial de matriz A en proceso [%d, %d]", 
-            myCoords[0], myCoords[1]);
+    MPI_Log(INFO, "Restaurar distribucion inicial de matriz A en proceso [%d, %d] (%d %d)", 
+            myCoords[0], myCoords[1], rc1, rc2);
 
     /* Restauramos la distribución original de la matriz B */
-    MPI_Cart_shift(comm_2d, 1, +myCoords[1], &shiftSource, &shiftDest);
-    MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
-                        shiftSource, 1, comm_2d, &status);
+    rc1 = MPI_Cart_shift(comm_2d, 1, +myCoords[1], &shiftSource, &shiftDest);
+    rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
+                               shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Restaurar distribucion inicial de matriz B en proceso [%d, %d]", 
-            myCoords[0], myCoords[1]);
+    MPI_Log(INFO, "Restaurar distribucion inicial de matriz B en proceso [%d, %d] (%d %d)", 
+            myCoords[0], myCoords[1], rc1, rc2);
 
     /* Liberamos el comunicador 2D */
     MPI_Comm_free(&comm_2d);
