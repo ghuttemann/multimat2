@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include "utils.h"
 #include "matrix.h"
 
@@ -229,6 +228,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
     matrix_clear(matC, matSize);
     MPI_Log(INFO, "Matrices A, B y C creadas");
 
+    // Inicio control tiempo.
     double initTime = MPI_Wtime();
     
     /*
@@ -320,8 +320,12 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
         }
     }
 
+    // Fin control tiempo.
     double endTime = MPI_Wtime();
 
+    /*
+     * Impresión de las matrices.
+     */
     if (printMatrix) {
         matrix_print(matA, matSize, stdout);
         printf("\n");
@@ -338,12 +342,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
     free(mensaje);
     free(resultado);
 
-    // Imprimir tiempo.
-    printf("\n\n%s\n\n  Tiempo total: %f (%s)  \n\n%s\n",
-        "###################################",
-        endTime - initTime,
-        MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
-        "###################################");
+    print_parallel_time(initTime, endTime);
 }
 
 /*
