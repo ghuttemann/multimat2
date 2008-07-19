@@ -23,12 +23,12 @@ modulos       = $(OBJ_DIR)/utils.o $(OBJ_DIR)/matrix.o
 mod_aleatorio = $(OBJ_DIR)/mm_2d_aleatorio.o
 mod_ciclico   = $(OBJ_DIR)/mm_2d_ciclico.o
 mod_cannon    = $(OBJ_DIR)/mm_cannon.o
-
+mod_diagonal  = $(OBJ_DIR)/mm_2d_diagonal.o
 ## 
 ## Como este es el primer target (all), se elige automaticamente cuando no 
 ## se pasa ningun target a Make. Es costumbre que exista este target.
 ##
-all: $(BIN_DIR)/mm_2d_aleatorio $(BIN_DIR)/mm_2d_ciclico $(BIN_DIR)/mm_cannon
+all: $(BIN_DIR)/mm_2d_aleatorio $(BIN_DIR)/mm_2d_ciclico $(BIN_DIR)/mm_cannon $(BIN_DIR)/mm_2d_diagonal
 
 ##
 ## Estas dependencias no se suelen listar "a mano". Se usa una herramienta
@@ -51,6 +51,9 @@ $(OBJ_DIR)/mm_2d_ciclico.o: mm_2d_ciclico.c matrix.h utils.h
 $(OBJ_DIR)/mm_cannon.o: mm_cannon.c matrix.h utils.h
 	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
 
+$(OBJ_DIR)/mm_2d_diagonal.o: mm_2d_diagonal.c matrix.h utils.h
+	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+
 ##
 ## Con este target construimos el proyecto
 ##
@@ -63,6 +66,8 @@ $(BIN_DIR)/mm_2d_ciclico: $(modulos) $(mod_ciclico)
 $(BIN_DIR)/mm_cannon: $(modulos) $(mod_cannon)
 	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_cannon) $(LIB_DIR) $(LIBS)
 
+$(BIN_DIR)/mm_2d_diagonal: $(modulos) $(mod_diagonal)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_diagonal) $(LIB_DIR) $(LIBS)
 ##
 ## El target clean suele existir para "remover" los archivos temporales
 ## y el archivo que se genera como producto del proyecto.
