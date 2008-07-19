@@ -31,3 +31,11 @@ bool is_perfect_square(int num) {
 
 	return false;
 }
+
+void print_parallel_time(double initTime, double endTime) {
+    printf("\n\n%s\n\n  Tiempo total: %f (%s)  \n\n%s\n",
+        "###################################",
+        endTime - initTime,
+        MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
+        "###################################");
+}
