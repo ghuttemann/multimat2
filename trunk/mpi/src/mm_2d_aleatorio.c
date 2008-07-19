@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include "utils.h"
 #include "matrix.h"
 
@@ -287,11 +286,7 @@ int main(int argc, char *argv[]) {
         free(matC);
         free(tareas);
         
-        printf("\n\n%s\n\n  Tiempo total: %f (%s)  \n\n%s\n", 
-                "###################################", 
-                endTime - initTime, 
-                MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
-                "###################################");
+        print_parallel_time(initTime, endTime);
 	}
 	else if (myRank <= maximo) {
 		/*
