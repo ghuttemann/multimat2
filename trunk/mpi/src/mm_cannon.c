@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
 	int commSize = 0;	// Tamaño del comunicador
 	int matSize  = 0; 	// Tamaño de la matriz
     int blkSize  = 0; 	// Tamaño del bloque
+    bool printMatrix;   // Bandera para impresión de matrices
     
     MPI_Log(INFO, "Antes de MPI_Init");
 
@@ -81,6 +82,15 @@ int main(int argc, char *argv[]) {
     }
     
     /*
+     * Establecemos la bandera que indica si se
+     * imprimirán o no las matrices.
+     */
+    if (argc >= 3 && strcmp("p", argv[2]) == 0)
+        printMatrix = true;
+    else
+        printMatrix = false;
+    
+    /*
      * Calculamos el tamaño de bloque.
      */
     blkSize = matSize / commSizeSqrt;
@@ -95,16 +105,40 @@ int main(int argc, char *argv[]) {
     /*
      * Inicializamos las matrices A, B y C
      */
-    matrix_fill(matA, blkSize);
-    matrix_fill(matB, blkSize);
-    matrix_clear(matC, blkSize);
+    matrix_load(matA, blkSize, A);
+    matrix_load(matB, blkSize, B);
+    matrix_load(matC, blkSize, C);
+    
     
     MPI_Log(INFO, "Matrices A, B y C creadas");
     
-    /*
-     * Ejecutamos el algoritmo de Cannon.
-     */
+    // Inicio control tiempo.
+    double initTime = MPI_Wtime();
+    
+    // Ejecutamos el algoritmo de Cannon.
     cannon_matrix_multiply(matSize, matA, matB, matC, MPI_COMM_WORLD);
+    
+    // Fin control tiempo.
+    double endTime = MPI_Wtime();
+    
+    /*
+     * Impresión de las matrices.
+     */
+    if (printMatrix) {
+        matrix_print(matA, blkSize, stdout);
+        printf("\n");
+        matrix_print(matB, blkSize, stdout);
+        printf("\n");
+        matrix_print(matC, blkSize, stdout);
+    }
+    
+    // Liberar buffers
+    free(matA);
+    free(matB);
+    free(matC);
+    
+    if (myRank == 0)
+        print_parallel_time(initTime, endTime);
     
     // Terminación
     MPI_Exit(EXIT_SUCCESS);
@@ -141,15 +175,15 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Comm_rank(comm_2d, &myRank_2d);
     MPI_Cart_coords(comm_2d, myRank_2d, 2, myCoords);
 
-    /* Calculamos el rank de los procesos de la izquierda y de arriba */
-    MPI_Cart_shift(comm_2d, 0, -1, &rightRank, &leftRank);
-    MPI_Cart_shift(comm_2d, 1, -1, &downRank, &upRank);
+    /* Calculamos los ranks de los corrimientos hacia la izquierda y hacia arriba*/
+    MPI_Cart_shift(comm_2d, 1, -1, &rightRank, &leftRank);
+    MPI_Cart_shift(comm_2d, 0, -1, &downRank, &upRank);
 
     /* Determinamos la dimensión de las matrices locales */
     nlocal = N / dims[0];
 
     /* Realizamos el alineamiento inicial de la matriz A */
-    rc1 = MPI_Cart_shift(comm_2d, 0, -myCoords[0], &shiftSource, &shiftDest);
+    rc1 = MPI_Cart_shift(comm_2d, 1, -myCoords[0], &shiftSource, &shiftDest);
     rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
@@ -157,7 +191,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
             myCoords[0], myCoords[1], rc1, rc2);
 
     /* Realizamos el alineamiento inicial de la matriz B */
-    rc1 = MPI_Cart_shift(comm_2d, 1, -myCoords[1], &shiftSource, &shiftDest);
+    rc1 = MPI_Cart_shift(comm_2d, 0, -myCoords[1], &shiftSource, &shiftDest);
     rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
@@ -201,7 +235,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     }
 
     /* Restauramos la distribución original de la matriz A */
-    rc1 = MPI_Cart_shift(comm_2d, 0, +myCoords[0], &shiftSource, &shiftDest);
+    rc1 = MPI_Cart_shift(comm_2d, 1, +myCoords[0], &shiftSource, &shiftDest);
     rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
@@ -209,7 +243,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
             myCoords[0], myCoords[1], rc1, rc2);
 
     /* Restauramos la distribución original de la matriz B */
-    rc1 = MPI_Cart_shift(comm_2d, 1, +myCoords[1], &shiftSource, &shiftDest);
+    rc1 = MPI_Cart_shift(comm_2d, 0, +myCoords[1], &shiftSource, &shiftDest);
     rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
