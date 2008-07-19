@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include <math.h>
+#include <mpi.h>
 
 /*
  * Finaliza el entorno MPI y termina el programa
@@ -106,5 +107,11 @@ bool is_perfect_square(int num);
  * útil para realizar divisiones.
  */
 #define DOUBLE(x) ((double) x)
+
+/*
+ * Imprime el tiempo transcurrido para un
+ * programa MPI.
+ */
+void print_parallel_time(double initTime, double endTime);
 
 #endif /*UTILS_H_*/
