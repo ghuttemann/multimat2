@@ -64,3 +64,16 @@ void matrix_mult(element_t *a, element_t *b, element_t *c, int n) {
 	for (k=0; k < n; k++)
 		c[matrix_map(n, i, j)] += a[matrix_map(n, i, k)] * b[matrix_map(n, k, j)];
 }
+
+void matrix_load(element_t *mat, int n, matrix_name_t mat_name) {
+    switch (mat_name) {
+        case A:
+        case B:
+            matrix_fill(mat, n);
+            break;
+            
+        case C:
+            matrix_clear(mat, n);
+            break;
+    }
+}
