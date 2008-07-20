@@ -32,6 +32,19 @@ bool is_perfect_square(int num) {
 	return false;
 }
 
+bool is_perfect_cube(int num) {
+    if (num < 0)
+		return false;
+
+	double decimal_root = cbrt(num);
+	double integer_root = (double) ((int) decimal_root);
+
+	if (decimal_root == integer_root)
+		return true;
+
+	return false;
+}
+
 void print_parallel_time(double initTime, double endTime) {
     printf("\n\n%s\n\n  Tiempo total: %f (%s)  \n\n%s\n",
         "###################################",
