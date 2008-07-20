@@ -34,7 +34,7 @@ void matrix_fill(element_t *mat, int tam);
 /*
  * Pone a cero todos los elementos de la matriz.
  */
-void matrix_clear(element_t *mat, int n);
+void matrix_clear(element_t *mat, int tam);
 
 /*
  * Calcula la traspuesta de una matriz
