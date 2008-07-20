@@ -1,4 +1,3 @@
-#include <mpi.h>
 #include "utils.h"
 #include "matrix.h"
 
