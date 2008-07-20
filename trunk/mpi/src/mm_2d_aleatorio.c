@@ -274,11 +274,11 @@ int main(int argc, char *argv[]) {
         
         // TODO: control tiempo
         if (argc >= 3 && strcmp("p", argv[2]) == 0) {
-            matrix_print(matA, matSize, stdout);
+            matrix_print(matA, matSize, matSize, stdout);
             printf("\n");
-            matrix_print(matB, matSize, stdout);
+            matrix_print(matB, matSize, matSize, stdout);
             printf("\n");
-            matrix_print(matC, matSize, stdout);
+            matrix_print(matC, matSize, matSize, stdout);
         }
         
         free(matA);

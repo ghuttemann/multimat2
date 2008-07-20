@@ -327,11 +327,11 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
      * Impresión de las matrices.
      */
     if (printMatrix) {
-        matrix_print(matA, matSize, stdout);
+        matrix_print(matA, matSize, matSize, stdout);
         printf("\n");
-        matrix_print(matB, matSize, stdout);
+        matrix_print(matB, matSize, matSize, stdout);
         printf("\n");
-        matrix_print(matC, matSize, stdout);
+        matrix_print(matC, matSize, matSize, stdout);
     }
 
     // Liberar buffers

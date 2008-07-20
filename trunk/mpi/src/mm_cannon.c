@@ -125,11 +125,11 @@ int main(int argc, char *argv[]) {
      * Impresión de las matrices.
      */
     if (printMatrix) {
-        matrix_print(matA, blkSize, stdout);
+        matrix_print(matA, blkSize, blkSize, stdout);
         printf("\n");
-        matrix_print(matB, blkSize, stdout);
+        matrix_print(matB, blkSize, blkSize, stdout);
         printf("\n");
-        matrix_print(matC, blkSize, stdout);
+        matrix_print(matC, blkSize, blkSize, stdout);
     }
     
     // Liberar buffers
