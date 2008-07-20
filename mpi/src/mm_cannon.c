@@ -168,8 +168,8 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     /* Hacemos que la comunicación sea cíclica */
     periods[0] = periods[1] = 1;
 
-    /* Se crea la topología cartesiana con reordenamiento de rank */
-    MPI_Cart_create(comm, 2, dims, periods, 1, &comm_2d);
+    /* Se crea la topología cartesiana */
+    MPI_Cart_create(comm, 2, dims, periods, 0, &comm_2d);
 
     /* Obtenemos el rank y las coordenadas respecto a la nueva topología */
     MPI_Comm_rank(comm_2d, &myRank_2d);
