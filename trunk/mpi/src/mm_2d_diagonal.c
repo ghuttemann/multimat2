@@ -25,6 +25,7 @@ typedef struct {
 
 int get_matrix_size(int, char **);
 void diagonal_matrix_multiply(int, element_t *, element_t *, element_t *, MPI_Comm);
+void mi_matrix_clear(element_t *mat, int n);
 
 /******************************************************************************
  ********************* F U N C I O N  P R I N C I P A L ***********************
@@ -117,14 +118,14 @@ int main(int argc, char** argv) {
      */
     element_t *matA = GET_MEM(element_t, blkSize * matSize);
     element_t *matB = GET_MEM(element_t, blkSize * matSize);
-    element_t *matC = GET_MEM(element_t, blkSize * blkSize);
+    element_t *matC = GET_MEM(element_t, blkSize * matSize);
 
     // Rellenar matrices A y B
-    matrix_fill(matA, blkSize);
-    matrix_fill(matB, blkSize);
+    matrix_fill(matA, blkSize * matSize);
+    matrix_fill(matB, blkSize * matSize);
 
     // Cerar matriz C
-    matrix_clear(matC, matSize);
+    matrix_clear(matC, blkSize * matSize);
     MPI_Log(INFO, "Matrices A, B y C ya se crearon \n");
     
   	/************************************************************************
@@ -143,12 +144,19 @@ int main(int argc, char** argv) {
     /*
      * Impresión de las matrices.
      */
+    
     MPI_Log(INFO, "FIN DEL PROCESO. FALTA IMPRIMIR MATRICES \n");
+    int b[1];
+    b[0]=1;
+    MPI_Status status;
+    if(myRank > 0) {
+        MPI_Recv(b,1,MPI_INT,myRank-1,1,MPI_COMM_WORLD, &status);
+    }
     if (printMatrix) {
         matrix_print(matA, blkSize, stdout);
-        printf("\n");
+        printf("[%d]TERMINA A \n",myRank);
         matrix_print(matB, blkSize, stdout);
-        printf("\n");
+        printf("[%d]TERMINA B \n",myRank);
         matrix_print(matC, blkSize, stdout);
     }
     
@@ -160,6 +168,9 @@ int main(int argc, char** argv) {
     if (myRank == 0)
         print_parallel_time(initTime, endTime);
 
+    if (myRank < commSize-1) {
+        MPI_Send(b,1,MPI_INT, myRank+1,1,MPI_COMM_WORLD);
+    }
     return (EXIT_SUCCESS);
 }
 
@@ -191,11 +202,10 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
                                 MPI_Comm comm) {
     
     int ROW = 0, COL = 1;
-    int i, j, nlocal;
+    int i, j, k, nlocal;
     int npes, dims[2], periods[2], keep_dims[2];
     int myrank, my2drank, mycoords[2];
     int other_rank, coords[2];
-    MPI_Status status;
     MPI_Comm comm_2d, comm_row, comm_col;
 
     /* Se obtiene información del comunicador */
@@ -207,8 +217,8 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     nlocal = N / dims[ROW];
 
     /* Se reserva memoria para la multiplicación parcial */
-    element_t * px = GET_MEM(element_t, N*N);
-    matrix_clear(px, N);
+    element_t * px = GET_MEM(element_t, dims[ROW]* N);
+    matrix_clear(px, dims[ROW]*N);
 
     MPI_Log(INFO, "#%d# TOPOLOGIA VALORES:,%d ,%d, %d", myrank, nlocal,N,dims[ROW]);
     /* 
@@ -216,67 +226,22 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      */
     periods[ROW] = periods[COL] = 0; /* Establece como no circular */
 
-    MPI_Cart_create(comm, 2, dims, periods, 1, &comm_2d);
+    MPI_Cart_create(comm, 2, dims, periods, 0, &comm_2d);
     MPI_Comm_rank(comm_2d, &my2drank);
     MPI_Cart_coords(comm_2d, my2drank, 2, mycoords);
 
-    /* Se crea la sub-topología con base en las columnas */
+    /* Se crea la sub-topología con base en las filas */
     keep_dims[ROW] = 0;
     keep_dims[COL] = 1;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_row);
 
-    /* Create the column-based sub-topology */
+    /* Se crea la sub-topología con base en las columnas */
     keep_dims[ROW] = 1;
     keep_dims[COL] = 0;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_col);
-
+    
     /*
-     * INICIALIZAR MATRIZ
-     *   -> Poner en los elementos de la diagonal las columnas y filas
-     *      correspondientes     
-     */
-    MPI_Datatype bloqueA;
-    MPI_Datatype bloqueB;
-    MPI_Type_vector(N,dims[COL],N,MPI_ELEMENT_T,&bloqueA);
-    MPI_Type_commit(&bloqueA);
-    MPI_Type_vector(dims[ROW],N,N,MPI_ELEMENT_T,&bloqueB);
-    MPI_Type_commit(&bloqueB);
-    
-    MPI_Log(INFO, "#%d# INICIALIZACION DE MATRICES (SE ENVIA) \n", myrank);
-    
-    // Se envia a la diagonal
-    if (mycoords[COL] == 0 && mycoords[ROW] != 0) {
-        // Se inicializan las variables y bloques
-        coords[ROW] = mycoords[ROW];
-        coords[COL] = mycoords[ROW];
-        
-        // Se localiza las coordenadas de las diagonales
-        MPI_Cart_rank(comm_2d, coords, &other_rank);
-        /*
-         * Se envian Columnas de A y Filas de B a sus correspondientes 
-         * elementos de procesamiento (pij) de las diagonales.
-         */
-        MPI_Send(&(A[nlocal*coords[COL]]), N*nlocal, bloqueA, other_rank, 1, comm_2d);
-        MPI_Send(&(B[nlocal*coords[ROW]]), N*nlocal, bloqueB, other_rank, 1, comm_2d);
-    }
-    
-    MPI_Log(INFO, "#%d# INICIALIZACION DE MATRICES (SE RECIBE) \n", myrank);
-    // Se recibe en la diagonal
-    if (mycoords[ROW] == mycoords[COL] && mycoords[ROW] != 0) {
-        coords[ROW] = mycoords[ROW];
-        coords[COL] = 0;
-        MPI_Cart_rank(comm_2d, coords, &other_rank);
-        MPI_Recv(&(A[nlocal*coords[COL]]), N*nlocal, bloqueA, other_rank, 1, comm_2d,
-                &status);
-        MPI_Recv(&(B[nlocal*coords[ROW]]), N*nlocal, bloqueB, other_rank, 1, comm_2d,
-                &status);
-    }
-    
-    int val=MPI_Barrier(comm_2d);
-    MPI_Log(INFO, "<%d> BARRIER (MAIN) \n", val);    
-
-    /*
-     * Paso 1: -> Distribuir los elementos desde la Diagonal en el eje x  
+     * Paso 1: -> Distribuir los elementos desde la Diagonal en el eje "y"
      */    
     coords[COL] = mycoords[COL];
     coords[ROW] = mycoords[COL];
@@ -287,7 +252,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      * del mesh de procesos (p*,j).
      */
     MPI_Log(INFO, "<%d> PASO 1 (BCAST) \n", myrank);
-    MPI_Bcast(&(A[nlocal*coords[COL]]), N*nlocal, bloqueA, other_rank, comm_col);
+    MPI_Bcast(A, N*nlocal,MPI_ELEMENT_T, other_rank, comm_col);
 
     /*
      * Operacion: Scatter de filas
@@ -296,24 +261,24 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      * pj,*)
      */
     MPI_Log(INFO, "<%d> PASO 1 (SCATTER) \n", myrank);
-    MPI_Scatter(&(B[(nlocal*coords[ROW])]), N*nlocal, bloqueB, 
-                &(B[(nlocal*coords[ROW])]), N*nlocal, bloqueB, 
+    MPI_Scatter(B, N*nlocal, MPI_ELEMENT_T, B, N*nlocal, MPI_ELEMENT_T, 
                 other_rank, comm_col);
     
     // Calculamos el Resultado: Rx = Ac x B
     for (i = 0; i < nlocal; i++) {
-        for (j = 0; j < N; j++)
-            px[i * N + j] += A[i * N + j] * B[i];
+        for (j = 0; j < nlocal; j++) {
+            for (k = 0; k < nlocal; k++) {
+                int aux = i*nlocal;
+                px[j*nlocal + k + aux] += A[j*nlocal + k + aux] * B[j*nlocal + k];
+            }
+        }
     }
-    MPI_Log(INFO, "<%d> BARRIER (ANTES) \n", myrank);
-    val=MPI_Barrier(comm_col);
-    MPI_Log(INFO, "<%d> BARRIER (DESPUES) \n", myrank);
     
     /*
-     * Paso 2: Enviamos el Resultado en la direccion "y".
+     * Paso 2: Enviamos el Resultado en la direccion "x".
      */
-    coords[COL] = mycoords[COL];
-    coords[ROW] = mycoords[COL];
+    coords[COL] = mycoords[ROW];
+    coords[ROW] = mycoords[ROW];
     /*
      * Operacion: Gather de filas
      * All-to-One reduction de los elementos de la fila de
@@ -321,9 +286,9 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      * pj,*
      */
     MPI_Cart_rank(comm_row, coords, &other_rank);
-    MPI_Log(INFO, "@%d@ PASO 2 (REDUCE) \n", myrank);
-    MPI_Reduce(px, C, N*N, MPI_ELEMENT_T, MPI_SUM, other_rank, comm_row);
-    
+    MPI_Log(INFO, "@%d@ PASO 2 (REDUCE)=> %d\n", myrank,(dims[ROW]*N));
+    MPI_Reduce(px, C, dims[ROW]* N, MPI_ELEMENT_T, MPI_SUM, other_rank, comm_row);
+    MPI_Log(INFO, "X%dX FIN \n", myrank);
     MPI_Comm_free(&comm_2d); /* Free up communicator */
     MPI_Comm_free(&comm_row); /* Free up communicator */
     MPI_Comm_free(&comm_col); /* Free up communicator */
