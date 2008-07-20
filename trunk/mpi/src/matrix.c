@@ -1,15 +1,14 @@
 #include "utils.h"
 #include "matrix.h"
 
-void matrix_print(element_t *mat, int n, FILE *output) {
+void matrix_print(element_t *mat, int n, int m, FILE *output) {
     int i, j;
 
     for (i=0; i < n; i++) {
-        for (j=0; j < n; j++) {
-            fprintf(output, ELEMENT_FORMAT, mat[matrix_map(n, i, j)]);
+        for (j=0; j < m; j++) {
+            fprintf(output, ELEMENT_FORMAT, mat[matrix_map(m, i, j)]);
             fprintf(output, "\t");
         }
-        
         fprintf(output, "\n");
     }
 }

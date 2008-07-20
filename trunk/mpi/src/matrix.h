@@ -24,7 +24,7 @@ typedef enum {A, B, C} matrix_name_t;
  * Imprime un objeto del tipo matrix_t en
  * el archivo "output".
  */
-void matrix_print(element_t *mat, int n, FILE *output);
+void matrix_print(element_t *mat, int n, int m, FILE *output);
 
 /*
  * Carga una matriz con valores aleatorios.
