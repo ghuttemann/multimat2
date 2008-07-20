@@ -34,12 +34,11 @@ void matrix_fill(element_t *mat, int tam) {
         mat[i] = (element_t) (10.0 * (rand() / (RAND_MAX + 1.0)));
 }
 
-void matrix_clear(element_t *mat, int n) {
-	int i, j;
+void matrix_clear(element_t *mat, int tam) {
+	int i;
     
-	for (i=0; i < n; i++)
-    for (j=0; j < n; j++)
-        mat[matrix_map(n, i, j)] = 0;
+	for (i=0; i < tam; i++)
+        mat[i] = 0;
 }
 
 void matrix_traspose(element_t *mat, int n) {
