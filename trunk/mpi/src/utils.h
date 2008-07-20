@@ -97,6 +97,19 @@ bool is_positive_integer(char *str);
 bool is_perfect_square(int num);
 
 /*
+ * Verifica si un número entero es un cubo perfecto.
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * A perfect cube (also called a cube number, or 
+ * sometimes just a cube) is a number which is the 
+ * cube of an integer.
+ *
+ * Fuente: http://en.wikipedia.org/wiki/Cube_(arithmetic)
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ */
+bool is_perfect_cube(int num);
+
+/*
  * Wrapper para la función xmalloc. Es útil
  * ya que no se requiere realizar cast.
  */
@@ -107,6 +120,12 @@ bool is_perfect_square(int num);
  * útil para realizar divisiones.
  */
 #define DOUBLE(x) ((double) x)
+
+/*
+ * Conversión de un número a integer. Normalmente
+ * útil para realizar truncamientos.
+ */
+#define INTEGER(x) ((int) x)
 
 /*
  * Imprime el tiempo transcurrido para un
