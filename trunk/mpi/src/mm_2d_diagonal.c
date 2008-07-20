@@ -221,8 +221,8 @@ void liberar_procesos(int myRank, int commSize) {
 }
 
 /*
- * Calcula la multiplicacion para una matriz a y un vector b
- * dando como resultado el vector x
+ * Calcula la multiplicacion para una matriz A y un vector B
+ * dando como resultado el vector C
  */
 void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C, 
                                 MPI_Comm comm) {
@@ -239,19 +239,15 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Comm_size(comm, &npes);
     MPI_Comm_rank(comm, &myrank);
 
-    /* Se calcula el tamaña del grip de procesos */
+    /* Se calcula variables del grip de procesos */
     dims[ROW] = dims[COL] = sqrt(npes);
     nlocal = N / dims[ROW];
-
-    /* Se reserva memoria para la multiplicación parcial */
-    element_t * px = GET_MEM(element_t, dims[ROW]* N);
-    matrix_clear(px, dims[ROW]*N);
 
     MPI_Log(INFO, "#%d# TOPOLOGIA VALORES:,%d ,%d, %d", myrank, nlocal,N,dims[ROW]);
     /* 
      * Se crea la topología cartesian sobre la matriz de procesos.
      */
-    periods[ROW] = periods[COL] = 0; /* Establece como no circular */
+    periods[ROW] = periods[COL] = 0; // Establece como no circular
 
     MPI_Cart_create(comm, 2, dims, periods, 0, &comm_2d);
     MPI_Comm_rank(comm_2d, &my2drank);
@@ -268,13 +264,13 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Cart_sub(comm_2d, keep_dims, &comm_col);
     
     /*
-     * Paso 1: -> Distribuir los elementos desde la Diagonal en el eje "y"
+     * -> Paso 1: Distribuir los elementos desde la Diagonal en el eje "y"
      */    
     coords[COL] = mycoords[COL];
     coords[ROW] = mycoords[COL];
     MPI_Cart_rank(comm_col, coords, &other_rank);
     /*
-     * Operacion: Broadcast de columnas
+     * Operacion 1: Broadcast de columnas
      * Broadcast de las columnas de A (A*,j) a los procesos en la columna j
      * del mesh de procesos (p*,j).
      */
@@ -282,7 +278,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Bcast(A, N*nlocal,MPI_ELEMENT_T, other_rank, comm_col);
 
     /*
-     * Operacion: Scatter de filas
+     * Operacion 2: Scatter de filas
      * One-to-all personalized broadcast de los elementos de la fila
      * B (Bi,*) a los procesos en la columna j del mesh de procesos
      * pj,*)
@@ -290,7 +286,15 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Log(INFO, "<%d> PASO 1 (SCATTER) \n", myrank);
     MPI_Scatter(B, nlocal*nlocal, MPI_ELEMENT_T, B, nlocal*nlocal, MPI_ELEMENT_T, 
                 other_rank, comm_col);
+
+    /*
+     * Multiplicación de matrices.
+     * Se multiplica A por una parte de B y se guarda en px.
+     */
     
+    // Se reserva memoria para la multiplicación parcial
+    element_t * px = GET_MEM(element_t, dims[ROW]* N);
+    matrix_clear(px, dims[ROW]*N);
     for (i=0; i < N; i++){
         for (j=0; j < nlocal; j++) {
             for (k=0; k < nlocal; k++) {
@@ -299,6 +303,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
             }
         }
     }
+    
     /*
      * -> Paso 2: Enviamos el Resultado en la direccion "x".
      *    -> Operacion: Reduce de filas
