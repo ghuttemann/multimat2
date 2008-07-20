@@ -67,11 +67,11 @@ void matrix_load(element_t *mat, int n, matrix_name_t mat_name) {
     switch (mat_name) {
         case A:
         case B:
-            matrix_fill(mat, n);
+            matrix_fill(mat, n * n);
             break;
             
         case C:
-            matrix_clear(mat, n);
+            matrix_clear(mat, n * n);
             break;
     }
 }

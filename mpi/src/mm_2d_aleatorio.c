@@ -131,11 +131,11 @@ int main(int argc, char *argv[]) {
 		element_t *matC = GET_MEM(element_t, matSize * matSize);
 
 		// Rellenar matrices A y B
-		matrix_fill(matA, matSize);
-		matrix_fill(matB, matSize);
+		matrix_fill(matA, matSize * matSize);
+		matrix_fill(matB, matSize * matSize);
         
         // Cerar matriz C
-        matrix_clear(matC, matSize);
+        matrix_clear(matC, matSize * matSize);
         
         
         MPI_Log(INFO, "Matrices A, B y C creadas");
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
 		while (status.MPI_TAG != endTag) {
             
             // Cerar matriz resultado
-            matrix_clear(resultado, blkSize);
+            matrix_clear(resultado, blkSize * blkSize);
 
 			// Multiplicar bloque.
 			multiply(mensaje, resultado, matSize, blkSize);
