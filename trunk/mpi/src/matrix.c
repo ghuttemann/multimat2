@@ -14,8 +14,8 @@ void matrix_print(element_t *mat, int n, FILE *output) {
     }
 }
 
-void matrix_fill(element_t *mat, int n) {
-	int i, j;
+void matrix_fill(element_t *mat, int tam) {
+	int i;
 	static bool first_time = true;
 
 	/*
@@ -30,9 +30,8 @@ void matrix_fill(element_t *mat, int n) {
 	/*
 	 * Cargamos la matriz con digitos decimales
 	 */
-	for (i=0; i < n; i++)
-    for (j=0; j < n; j++)
-        mat[matrix_map(n, i, j)] = (element_t) (10.0 * (rand() / (RAND_MAX + 1.0)));
+	for (i=0; i < tam; i++)
+        mat[i] = (element_t) (10.0 * (rand() / (RAND_MAX + 1.0)));
 }
 
 void matrix_clear(element_t *mat, int n) {

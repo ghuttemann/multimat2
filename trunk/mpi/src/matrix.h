@@ -29,7 +29,7 @@ void matrix_print(element_t *mat, int n, FILE *output);
 /*
  * Carga una matriz con valores aleatorios.
  */
-void matrix_fill(element_t *mat, int n);
+void matrix_fill(element_t *mat, int tam);
 
 /*
  * Pone a cero todos los elementos de la matriz.
