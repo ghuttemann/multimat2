@@ -301,18 +301,17 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
     MPI_Comm comm_cols;
     MPI_Cart_sub(comm_3d, remain_dims_cols, &comm_cols);
     
-    MPI_Log(INFO, "Subgrilla de columnas creada por P[%d, %d, %d]",
+    MPI_Log(INFO, "Subgrilla de Columnas creada por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
     /* 2.1.2
      *
-     * Los root de cada Bcast deben ser los procesos 
-     * Pmjk tal que j=k y m=i, calculado por cada Pijk.
+     * Los root de cada Bcast deben ser los procesos dentro
+     * de los nuevos comunicadores cuyo rank es igual a la
+     * coordenada k del proceso que ejecuta el Bcast.
      */
-    int rootColsCoords[NDIMS] = {myCoords[DIM_I], myCoords[DIM_K], myCoords[DIM_K]};
-    int rootColsRank;
-    MPI_Cart_rank(comm_3d, rootColsCoords, &rootColsRank);
+    int rootColsRank = myCoords[DIM_K];
     
     
     /* 2.1.3
@@ -323,9 +322,8 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      */
     MPI_Bcast(A, nlocal * nlocal, MPI_ELEMENT_T, rootColsRank, comm_cols);
     
-    MPI_Log(INFO, "Bcast(%d, %d, %d) de A en columnas ejecutado por P[%d, %d, %d]", 
-            rootColsCoords[DIM_I], rootColsCoords[DIM_J], rootColsCoords[DIM_K], 
-            myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
+    MPI_Log(INFO, "Bcast(%d) de A en columnas ejecutado por P[%d, %d, %d]", 
+            rootColsRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
     /* 2.2
@@ -345,18 +343,17 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
     MPI_Comm comm_rows;
     MPI_Cart_sub(comm_3d, remain_dims_rows, &comm_rows);
     
-    MPI_Log(INFO, "Subgrilla de filas creada por P[%d, %d, %d]",
+    MPI_Log(INFO, "Subgrilla de Filas creada por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
     /* 2.2.2
      *
-     * Los root de cada Bcast deben ser los procesos 
-     * Pimk tal que i=k y m=j, calculado por cada Pijk.
+     * Los root de cada Bcast deben ser los procesos dentro
+     * de los nuevos comunicadores cuyo rank es igual a la
+     * coordenada k del proceso que ejecuta el Bcast.
      */
-    int rootRowsCoords[NDIMS] = {myCoords[DIM_K], myCoords[DIM_J], myCoords[DIM_K]};
-    int rootRowsRank;
-    MPI_Cart_rank(comm_3d, rootRowsCoords, &rootRowsRank);
+    int rootRowsRank = myCoords[DIM_K];
     
     
     /* 2.2.3
@@ -367,9 +364,8 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      */
     MPI_Bcast(B, nlocal * nlocal, MPI_ELEMENT_T, rootRowsRank, comm_rows);
     
-    MPI_Log(INFO, "Bcast(%d, %d, %d) de A en filas ejecutado por P[%d, %d, %d]", 
-            rootColsCoords[DIM_I], rootColsCoords[DIM_J], rootColsCoords[DIM_K], 
-            myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
+    MPI_Log(INFO, "Bcast(%d) de B en filas ejecutado por P[%d, %d, %d]", 
+            rootRowsRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     /*
      * 2.3
@@ -402,33 +398,36 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      * Debemos construir comunicadores tal que incluyan a los procesos
      * Pijk, tal que k=0,1,2,3,...,n-1.
      */
-    int remain_dims_plan[NDIMS] = {false, false, true};
-    MPI_Comm comm_plan;
-    MPI_Cart_sub(comm_3d, remain_dims_plan, &comm_plan);
+    int remain_dims_reduction[NDIMS] = {false, false, true};
+    MPI_Comm comm_reduction;
+    MPI_Cart_sub(comm_3d, remain_dims_reduction, &comm_reduction);
+    
+    MPI_Log(INFO, "Subgrilla para Reduction creada por P[%d, %d, %d]",
+            myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
     /* 3.2
      *
-     * Los root de cada Reduce deben ser los procesos 
-     * .
+     * Los root de cada Reduce deben ser los procesos k=0
+     * de los comunicadores para el reduction.
      */
-    int rootPlanCoords[NDIMS] = {myCoords[DIM_I], myCoords[DIM_J], 0};
-    int rootPlanRank;
-    MPI_Cart_rank(comm_3d, rootPlanCoords, &rootPlanRank);
+    int rootReductionRank = 0;
     
     
     /* 3.3
      *
      * La operación Reduce es realizada por todos los 
-     * procesos dentro del comunicador de planos.
+     * procesos dentro del comunicador para reduction.
      */
-    MPI_Reduce(C, C, nlocal * nlocal, MPI_ELEMENT_T, MPI_SUM, rootPlanRank, comm_plan);
+    MPI_Reduce(C, R, nlocal * nlocal, MPI_ELEMENT_T, MPI_SUM, rootReductionRank, comm_reduction);
     
+    MPI_Log(INFO, "Reduce(%d) realizado por P[%d, %d, %d]", 
+            rootReductionRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     // Liberar comunicadores
     MPI_Comm_free(&comm_cols);
     MPI_Comm_free(&comm_rows);
-    MPI_Comm_free(&comm_plan);
+    MPI_Comm_free(&comm_reduction);
 }
 
 /*
