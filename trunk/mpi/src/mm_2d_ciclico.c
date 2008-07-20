@@ -223,9 +223,9 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
     element_t *matC = GET_MEM(element_t, matSize * matSize);
 
     // Rellenar matrices A y B, cerar matriz C
-    matrix_fill(matA, matSize);
-    matrix_fill(matB, matSize);
-    matrix_clear(matC, matSize);
+    matrix_fill(matA, matSize * matSize);
+    matrix_fill(matB, matSize * matSize);
+    matrix_clear(matC, matSize * matSize);
     MPI_Log(INFO, "Matrices A, B y C creadas");
 
     // Inicio control tiempo.
@@ -385,7 +385,7 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
                 status.MPI_TAG, myRank, rc);
         
         // Cerar matriz resultado
-        matrix_clear(resultado, blkSize);
+        matrix_clear(resultado, blkSize * blkSize);
 
         // Multiplicar bloque.
         multiply(mensaje, resultado, matSize, blkSize);
