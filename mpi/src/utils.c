@@ -52,3 +52,14 @@ void print_parallel_time(double initTime, double endTime) {
         MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
         "###################################");
 }
+
+FILE *open_file(char *path, char *modo) {
+	FILE *file;
+	
+    if ((file = fopen(path, modo)) == NULL) {
+        fprintf(stderr, "Error abriendo archivo '%s' en modo '%s'", path, modo);
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+	
+	return file;
+}

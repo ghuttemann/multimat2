@@ -133,4 +133,10 @@ bool is_perfect_cube(int num);
  */
 void print_parallel_time(double initTime, double endTime);
 
+/*
+ * Función wrapper sobre la función "fopen", para el 
+ * chequeo de posibles errores en la apertura de archivos.
+ */
+FILE *open_file(char *path, char *modo);
+
 #endif /*UTILS_H_*/
