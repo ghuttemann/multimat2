@@ -5,7 +5,6 @@
  * Created on 17 de julio de 2008, 08:01 PM
  */
 
-#include <mpi.h>
 #include "utils.h"
 #include "matrix.h"
 
