@@ -25,7 +25,9 @@ typedef struct {
 int get_matrix_size(int, char **);
 void diagonal_matrix_multiply(int, element_t *, element_t *, element_t *, MPI_Comm);
 void mi_matrix_clear(element_t *mat, int n);
-
+void soloPasa_proceso_0(int);
+void liberar_procesos(int, int);
+    
 /******************************************************************************
  ********************* F U N C I O N  P R I N C I P A L ***********************
  ******************************************************************************/
@@ -126,10 +128,21 @@ int main(int argc, char** argv) {
     // Cerar matriz C
     matrix_clear(matC, blkSize * matSize);
     MPI_Log(INFO, "Matrices A, B y C ya se crearon \n");
-    
-  	/************************************************************************
+
+    soloPasa_proceso_0(myRank);
+    MPI_Log(INFO, "FIN DEL PROCESO. FALTA IMPRIMIR MATRICES \n");
+    if (printMatrix) {
+        matrix_print(matA, matSize, blkSize, stdout);
+        printf("[%d]TERMINA A \n",myRank);
+        matrix_print(matB, blkSize, matSize, stdout);
+        printf("[%d]TERMINA B \n",myRank);
+        matrix_print(matC, matSize, blkSize, stdout);
+    }    
+    liberar_procesos(myRank, commSize);
+    MPI_Log(INFO, "----------------------------------------------------\n");
+  	/*
   	 *  Proceso Principal del Algoritmo 2-D Diagonal
-  	 ************************************************************************/
+  	 */
     // Inicio control tiempo.
     double initTime = MPI_Wtime();
     
@@ -137,26 +150,19 @@ int main(int argc, char** argv) {
     
     // Fin control tiempo.
     double endTime = MPI_Wtime();
-    /************************************************************************
-     *  Fin del Proceso Principal 
-     ************************************************************************/    
+
     /*
      * Impresión de las matrices.
      */
-    
     MPI_Log(INFO, "FIN DEL PROCESO. FALTA IMPRIMIR MATRICES \n");
-    int b[1];
-    b[0]=1;
-    MPI_Status status;
-    if(myRank > 0) {
-        MPI_Recv(b,1,MPI_INT,myRank-1,1,MPI_COMM_WORLD, &status);
-    }
+    soloPasa_proceso_0(myRank);
+    
     if (printMatrix) {
-        matrix_print(matA, blkSize, stdout);
+        matrix_print(matA, matSize, blkSize, stdout);
         printf("[%d]TERMINA A \n",myRank);
-        matrix_print(matB, blkSize, stdout);
+        matrix_print(matB, blkSize, matSize, stdout);
         printf("[%d]TERMINA B \n",myRank);
-        matrix_print(matC, blkSize, stdout);
+        matrix_print(matC, matSize, blkSize, stdout);
     }
     
     // Liberar buffers
@@ -164,12 +170,10 @@ int main(int argc, char** argv) {
     free(matB);
     free(matC);
     
-    if (myRank == 0)
-        print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime);
 
-    if (myRank < commSize-1) {
-        MPI_Send(b,1,MPI_INT, myRank+1,1,MPI_COMM_WORLD);
-    }
+    liberar_procesos(myRank, commSize);
+    
     return (EXIT_SUCCESS);
 }
 
@@ -194,14 +198,38 @@ int get_matrix_size(int argc, char *argv[]) {
 }
 
 /*
- * Calcula la multiplicaciÃ³n para una matriz a y un vector b
+ * Solo pasa el proceso 0. El resto se bloque en espera del proceso 0;
+ */
+void soloPasa_proceso_0(int myRank) {
+    int b[1];
+    b[0]=1;
+    MPI_Status status;
+    if(myRank > 0) {
+        MPI_Recv(b,1,MPI_INT,myRank-1,1,MPI_COMM_WORLD, &status);
+    }
+}
+
+/*
+ * Libera a la siguiente matriz
+ */
+void liberar_procesos(int myRank, int commSize) {
+    int b[1];
+    b[0]=1;
+    if (myRank < commSize-1) {
+        MPI_Send(b,1,MPI_INT, myRank+1,1,MPI_COMM_WORLD);
+    }
+}
+
+/*
+ * Calcula la multiplicacion para una matriz a y un vector b
  * dando como resultado el vector x
  */
 void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C, 
                                 MPI_Comm comm) {
     
     int ROW = 0, COL = 1;
-    int i, j, k, nlocal;
+    int i, j, k;
+    int nlocal;
     int npes, dims[2], periods[2], keep_dims[2];
     int myrank, my2drank, mycoords[2];
     int other_rank, coords[2];
@@ -260,37 +288,37 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      * pj,*)
      */
     MPI_Log(INFO, "<%d> PASO 1 (SCATTER) \n", myrank);
-    MPI_Scatter(B, N*nlocal, MPI_ELEMENT_T, B, N*nlocal, MPI_ELEMENT_T, 
+    MPI_Scatter(B, nlocal*nlocal, MPI_ELEMENT_T, B, nlocal*nlocal, MPI_ELEMENT_T, 
                 other_rank, comm_col);
     
-    // Calculamos el Resultado: Rx = Ac x B
-    for (i = 0; i < nlocal; i++) {
-        for (j = 0; j < nlocal; j++) {
-            for (k = 0; k < nlocal; k++) {
-                int aux = i*nlocal;
-                px[j*nlocal + k + aux] += A[j*nlocal + k + aux] * B[j*nlocal + k];
+    for (i=0; i < N; i++){
+        for (j=0; j < nlocal; j++) {
+            for (k=0; k < nlocal; k++) {
+                px[matrix_map(nlocal, i, j)] += A[matrix_map(nlocal, i, k)]* 
+                                    B[matrix_map(nlocal, k, j)];
             }
         }
     }
-    
     /*
-     * Paso 2: Enviamos el Resultado en la direccion "x".
+     * -> Paso 2: Enviamos el Resultado en la direccion "x".
+     *    -> Operacion: Reduce de filas
+     *    All-to-One reduction de los elementos de la fila de
+     *    B (Bi,*) a los procesos en la columna j del mesh de procesos
+     *    pj,*
      */
     coords[COL] = mycoords[ROW];
     coords[ROW] = mycoords[ROW];
-    /*
-     * Operacion: Gather de filas
-     * All-to-One reduction de los elementos de la fila de
-     * B (Bi,*) a los procesos en la columna j del mesh de procesos
-     * pj,*
-     */
+    
     MPI_Cart_rank(comm_row, coords, &other_rank);
     MPI_Log(INFO, "@%d@ PASO 2 (REDUCE)=> %d\n", myrank,(dims[ROW]*N));
     MPI_Reduce(px, C, dims[ROW]* N, MPI_ELEMENT_T, MPI_SUM, other_rank, comm_row);
     MPI_Log(INFO, "X%dX FIN \n", myrank);
-    MPI_Comm_free(&comm_2d); /* Free up communicator */
-    MPI_Comm_free(&comm_row); /* Free up communicator */
-    MPI_Comm_free(&comm_col); /* Free up communicator */
-
+    
+    // Se liberan los comunicadores creados.
+    MPI_Comm_free(&comm_2d); 
+    MPI_Comm_free(&comm_row);
+    MPI_Comm_free(&comm_col);
+    
+    // Se libera Variable auxiliar del producto.
     free(px);
 }
