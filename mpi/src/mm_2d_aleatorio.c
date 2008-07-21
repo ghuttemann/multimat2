@@ -52,9 +52,12 @@ int main(int argc, char *argv[]) {
 	MPI_Log(INFO, "Cantidad procesos: %d", commSize);
 
 	/*
-	 * Obtenemos el ranking del proceso.
+	 * Obtenemos el ranking del proceso e 
+     * inicializamos la semilla para la
+     * generación de números aleatorios.
 	 */
 	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    srand(myRank);
 
 	/*
 	 * Verificamos que el tamaño del comunicador
