@@ -376,7 +376,7 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
      * esclavos es mayor a cero, los primeros procesos deberán 
      * recibir una tarea más que los demás.
      */
-    if (myRank <= (matSize % (commSize - 1))
+    if (myRank <= (matSize % (commSize - 1)))
         ++taskCount;
     
     /*
