@@ -296,6 +296,13 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
                 ++sent_tasks;
                 --avail_tasks;
             }
+            else {
+                /*
+                 * Ya no hay tareas, no necesitamos
+                 * seguir iterando sobre los procesos.
+                 */
+                break;
+            }
         }
 
         /*
@@ -369,7 +376,7 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
      * esclavos es mayor a cero, los primeros procesos deberán 
      * recibir una tarea más que los demás.
      */
-    if (myRank <= matSize % (commSize - 1))
+    if (myRank <= (matSize % (commSize - 1))
         ++taskCount;
     
     /*
