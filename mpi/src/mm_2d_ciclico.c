@@ -253,78 +253,110 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
 
     /* 
      * Comienza la comunicación.
-     * 
-     * Iteramos sobre las tareas, enviando a 
-     * los procesos cíclicamente.
      */
-    int sent_tasks, proc;
+    int procRank;
     int avail_tasks = matSize;
 
-    while (avail_tasks > 0) {
-        sent_tasks = 0;
+    /*
+     * Almacena la cuenta de las tareas que
+     * fueron enviadas y tienen recepción
+     * pendiente, de tal manera a saber
+     * cuántas recepciones faltan realizar.
+     */
+    int sent_tasks = 0;
 
-        /* 
-         * Enviar cíclicamente a los procesos.
-         */
-        for (proc=1; proc < commSize; proc++) {
+    /* 
+     * Enviar cíclicamente a los procesos.
+     */
+    for (procRank=1; procRank < commSize; procRank++) {
 
-            /*
-             * Puede que la cantidad de tareas llegue
-             * a cero antes de enviar a todos los procesos
-             * del ciclo actual (caso que la cantidad de
-             * tareas no sea divisible exactamente entre
-             * la cantidad de procesos), entonces debemos
-             * verificar para no enviar de más.
-             */
-            if (avail_tasks > 0) {
+        // Construir mensaje.
+        build_message(mensaje, matA, matB, matSize, blkSize,
+                      tareas[matSize - avail_tasks].primero,
+                      tareas[matSize - avail_tasks].segundo);
 
-                // Construir mensaje.
-                build_message(mensaje, matA, matB, matSize, blkSize,
-                              tareas[matSize - avail_tasks].primero,
-                              tareas[matSize - avail_tasks].segundo);
+        MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
 
-                MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
+        // Enviar mensaje.
+        rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
+                      procRank, matSize - avail_tasks, MPI_COMM_WORLD);
 
-                // Enviar mensaje.
-                rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
-                              proc, matSize - avail_tasks, MPI_COMM_WORLD);
+        MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
+                matSize - avail_tasks, procRank, rc);
 
-                MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
-                        matSize - avail_tasks, proc, rc);
+        // Actualizar contadores
+        ++sent_tasks;
+        --avail_tasks;
+    }
 
-                // Actualizar contadores
-                ++sent_tasks;
-                --avail_tasks;
-            }
-            else {
-                /*
-                 * Ya no hay tareas, no necesitamos
-                 * seguir iterando sobre los procesos.
-                 */
-                break;
-            }
-        }
+    
+    /*
+     * Comenzamos a recibir los resultados
+     * calculados y continuar enviando las
+     * tareas faltantes.
+     *
+     * Iteramos mientras hayan recepciones
+     * de resultados pendientes.
+     */
+    procRank = 1;
+    
+    while (sent_tasks > 0) {
 
+        // Recibimos el resultado.
+        rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
+                      procRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+        MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
+                status.MPI_TAG, status.MPI_SOURCE, rc);
+        
+        
+        // Un resultado pendiente menos
+        --sent_tasks;
+        
+        
         /*
-         * Ahora debemos recibir una cantidad de resultados
-         * igual a la cantidad de mensajes enviados.
+         * Volvemos a enviar al mismo proceso 
+         * solo si quedan tareas disponibles.
          */
-        for (proc=1; proc <= sent_tasks; proc++) {
+        if (avail_tasks > 0) {
+            
+            // Construir mensaje.
+            build_message(mensaje, matA, matB, matSize, blkSize,
+                          tareas[matSize - avail_tasks].primero,
+                          tareas[matSize - avail_tasks].segundo);
 
-            // Recibimos el resultado.
-            rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
-                          proc, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
 
-            MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
-                    status.MPI_TAG, status.MPI_SOURCE, rc);
+            // Enviar mensaje.
+            rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
+                          procRank, matSize - avail_tasks, MPI_COMM_WORLD);
 
-            // Guardamos el resultado.
-            save_result(matC, matSize, blkSize, resultado,
-                        tareas[status.MPI_TAG].primero,
-                        tareas[status.MPI_TAG].segundo);
-
-            MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
+            MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
+                    matSize - avail_tasks, procRank, rc);
+            
+            
+            //Un resultado pendiente más
+            ++sent_tasks;
+            
+            // Una tarea disponible menos
+            --avail_tasks;
         }
+
+        // Guardamos el resultado.
+        save_result(matC, matSize, blkSize, resultado,
+                    tareas[status.MPI_TAG].primero,
+                    tareas[status.MPI_TAG].segundo);
+
+        MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
+        
+        
+        /*
+         * Incrementamos el rank del proceso
+         * en cuestion de manera cíclica, entre
+         * 1 y commSize-1.
+         */
+        if (++procRank > commSize - 1)
+            procRank = 1;
     }
 
     // Fin control tiempo.
