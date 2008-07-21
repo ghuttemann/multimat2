@@ -150,6 +150,25 @@ int main(int argc, char *argv[]) {
         matrix_load(matB, blkSize, B);
     }
     
+    if (printMatrix && myCoords[DIM_K] == 0) {
+        char filenameA[100];
+        char filenameB[100];
+        
+        sprintf(filenameA, "matrixA-%d-%d-%d.txt", 
+                myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
+        sprintf(filenameB, "matrixA-%d-%d-%d.txt", 
+                myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
+        
+        FILE *fileA = open_file(filenameA, "w");
+        FILE *fileB = open_file(filenameB, "w");
+        
+        matrix_print(matResult, blkSize, blkSize, fileA);
+        matrix_print(matResult, blkSize, blkSize, fileB);
+        
+        fclose(fileA);
+        fclose(fileB);
+    }
+    
     // Inicializamos las matrices C y Result
     matrix_load(matC, blkSize, C);
     matrix_load(matResult, blkSize, C);
@@ -164,8 +183,20 @@ int main(int argc, char *argv[]) {
     double endTime = MPI_Wtime();
     
     /*
-     * TODO: Impresión de las matrices (solo el plano cero).
+     * Impresión de las matrices (solo el plano cero).
      */
+    if (printMatrix && myCoords[DIM_K] == 0) {
+        char filenameC[100];
+        
+        sprintf(filenameC, "matrizC-%d-%d-%d.txt", 
+                myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
+        
+        FILE *fileC = open_file(filenameC, "w");
+        
+        matrix_print(matResult, blkSize, blkSize, fileC);
+        
+        fclose(fileC);
+    }
     
     // Liberar buffers
     free(matA);
@@ -173,8 +204,7 @@ int main(int argc, char *argv[]) {
     free(matC);
     free(matResult);
     
-    if (myRank == 0)
-        print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime);
     
     // Liberamos el comunicador 3D
     MPI_Comm_free(&comm_3d);
