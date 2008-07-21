@@ -28,6 +28,13 @@ void matrix_print(element_t *mat, int n, int m, FILE *output);
 
 /*
  * Carga una matriz con valores aleatorios.
+ *
+ * Se debe inicializar la semilla para los
+ * valores aleatorios antes de usar esta
+ * función. 
+ * 
+ * Conviene que cada proceso inicialice la
+ * semilla con su rank.
  */
 void matrix_fill(element_t *mat, int tam);
 
