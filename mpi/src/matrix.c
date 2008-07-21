@@ -15,16 +15,6 @@ void matrix_print(element_t *mat, int n, int m, FILE *output) {
 
 void matrix_fill(element_t *mat, int tam) {
 	int i;
-	static bool first_time = true;
-
-	/*
-	 * Solo inicializamos la semilla
-	 * en la primera llamada.
-	 */
-	if (first_time) {
-		srand(time(NULL));
-		first_time = false;
-	}
 
 	/*
 	 * Cargamos la matriz con digitos decimales
