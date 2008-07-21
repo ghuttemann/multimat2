@@ -136,8 +136,7 @@ int main(int argc, char *argv[]) {
     free(matB);
     free(matC);
     
-    if (myRank == 0)
-        print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime);
     
     // Terminación
     MPI_Exit(EXIT_SUCCESS);
