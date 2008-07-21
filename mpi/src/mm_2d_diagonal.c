@@ -24,7 +24,6 @@ typedef struct {
 
 int get_matrix_size(int, char **);
 void diagonal_matrix_multiply(int, element_t *, element_t *, element_t *, MPI_Comm);
-void mi_matrix_clear(element_t *mat, int n);
 void soloPasa_proceso_0(int);
 void liberar_procesos(int, int);
     
