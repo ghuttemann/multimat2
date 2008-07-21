@@ -41,9 +41,12 @@ int main(int argc, char *argv[]) {
 	MPI_Log(INFO, "Cantidad procesos: %d", commSize);
     
     /*
-	 * Obtenemos el ranking del proceso.
+	 * Obtenemos el ranking del proceso e 
+     * inicializamos la semilla para la
+     * generación de números aleatorios.
 	 */
 	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    srand(myRank);
     
     // Obtener tamaño de la matriz
     if ((matSize = get_matrix_size(argc, argv)) < 0) {
@@ -156,14 +159,14 @@ int main(int argc, char *argv[]) {
         
         sprintf(filenameA, "matrixA-%d-%d-%d.txt", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
-        sprintf(filenameB, "matrixA-%d-%d-%d.txt", 
+        sprintf(filenameB, "matrixB-%d-%d-%d.txt", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
         
         FILE *fileA = open_file(filenameA, "w");
         FILE *fileB = open_file(filenameB, "w");
         
-        matrix_print(matResult, blkSize, blkSize, fileA);
-        matrix_print(matResult, blkSize, blkSize, fileB);
+        matrix_print(matA, blkSize, blkSize, fileA);
+        matrix_print(matB, blkSize, blkSize, fileB);
         
         fclose(fileA);
         fclose(fileB);
