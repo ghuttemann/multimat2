@@ -14,6 +14,9 @@
 
 #define MPI_ELEMENT_T MPI_FLOAT
 
+#define ROW 0
+#define COL 1
+
 int get_matrix_size(int, char **);
 void diagonal_matrix_multiply(int, element_t *, element_t *, element_t *, MPI_Comm);
 void soloPasa_proceso_0(int);
@@ -107,7 +110,25 @@ int main(int argc, char** argv) {
      * Calculamos el tamaño de bloque.
      */
     blkSize = matSize / commSizeSqrt;
-   
+    
+    /**************************************************************************
+     * Construimos la topología 2D
+     */
+    int dims[2], periods[2], myCoords[2], myRank_2d;
+    MPI_Comm comm_2d;
+    
+    /* Se calcula variables del grid de procesos */
+    dims[ROW] = dims[COL] = (int) sqrt(commSize);
+    
+    /* 
+     * Se crea la topologia cartesiana sobre la matriz de procesos.
+     */
+    periods[ROW] = periods[COL] = 0; // Establece como no circular
+
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &comm_2d);
+    MPI_Comm_rank(comm_2d, &myRank_2d);
+    MPI_Cart_coords(comm_2d, myRank_2d, 2, myCoords);
+    /**************************************************************************/
     /*
      * Inicializacion de la Matriz A, B y C.
      */
@@ -116,24 +137,30 @@ int main(int argc, char** argv) {
     element_t *matC = GET_MEM(element_t, blkSize * matSize);
 
     // Rellenar matrices A y B
-    matrix_fill(matA, blkSize * matSize);
-    matrix_fill(matB, blkSize * matSize);
+    if (myCoords[ROW] == myCoords[COL]) {
+        matrix_fill(matA, blkSize * matSize);
+        matrix_fill(matB, blkSize * matSize);
+    }
 
     // Cerar matriz C
-    matrix_clear(matC, blkSize * matSize);
+    if (myCoords[ROW] == myCoords[COL])
+        matrix_clear(matC, blkSize * matSize);
+    
     MPI_Log(INFO, "Matrices A, B y C ya se crearon");
 
     if (printMatrix) {
         MPI_Barrier(MPI_COMM_WORLD);
         soloPasa_proceso_0(myRank);
         
-        matrix_print(matA, matSize, blkSize, stdout);
-        printf("[%d]TERMINA A \n", myRank);
-        matrix_print(matB, blkSize, matSize, stdout);
-        printf("[%d]TERMINA B \n", myRank);
+        if (myCoords[ROW] == myCoords[COL]) {
+            matrix_print(matA, matSize, blkSize, stdout);
+            printf("[%d, %d]TERMINA A \n",  myCoords[ROW], myCoords[COL]);
+            matrix_print(matB, blkSize, matSize, stdout);
+            printf("[%d, %d]TERMINA B \n",  myCoords[ROW], myCoords[COL]);
+            MPI_Log(INFO, "--------------------------------------------------");
+        }
         
         liberar_procesos(myRank, commSize);
-        MPI_Log(INFO, "----------------------------------------------------");
         MPI_Barrier(MPI_COMM_WORLD);
     }
     
@@ -143,7 +170,7 @@ int main(int argc, char** argv) {
     // Inicio control tiempo.
     double initTime = MPI_Wtime();
     
-    diagonal_matrix_multiply(matSize, matA, matB, matC, MPI_COMM_WORLD);
+    diagonal_matrix_multiply(matSize, matA, matB, matC, comm_2d);
     
     // Fin control tiempo.
     double endTime = MPI_Wtime();
@@ -157,11 +184,17 @@ int main(int argc, char** argv) {
         MPI_Barrier(MPI_COMM_WORLD);
         soloPasa_proceso_0(myRank);
 
-        matrix_print(matC, matSize, blkSize, stdout);
+        if (myCoords[ROW] == myCoords[COL]) {
+            matrix_print(matC, matSize, blkSize, stdout);
+            printf("[%d, %d]TERMINA C \n", myCoords[ROW], myCoords[COL]);
+        }
         
         liberar_procesos(myRank, commSize);
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    
+    // Liberamos el comunicador 2D
+    MPI_Comm_free(&comm_2d);
     
     // Liberar buffers
     free(matA);
@@ -219,105 +252,97 @@ void liberar_procesos(int myRank, int commSize) {
  * dando como resultado el vector C
  */
 void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C, 
-                                MPI_Comm comm) {
+                                MPI_Comm comm_2d) {
     
-    int ROW = 0, COL = 1;
     int i, j, k;
-    int nlocal;
-    int commSize, dims[2], periods[2], keep_dims[2];
-    int myRank, myRank_2d, myCoords[2];
-    int other_rank, coords[2];
-    MPI_Comm comm_2d, comm_row, comm_col;
+    int nlocal, keep_dims[2];
+    int myCoords[2], comm2dSize;
+    int rootRank, coords[2], myRank_2d;
+    MPI_Comm comm_row, comm_col;
 
-    /* Se obtiene informacion del comunicador */
-    MPI_Comm_size(comm, &commSize);
-    MPI_Comm_rank(comm, &myRank);
-
-    /* Se calcula variables del grid de procesos */
-    dims[ROW] = dims[COL] = (int) sqrt(commSize);
-    nlocal = N / dims[ROW];
-
-    MPI_Log(INFO, "#%d# TOPOLOGIA VALORES: %d , %d, %d", myRank, nlocal, N, dims[ROW]);
+    // Tamaño del comunicador.
+    MPI_Comm_size(comm_2d, &comm2dSize);
     
-    /* 
-     * Se crea la topologia cartesiana sobre la matriz de procesos.
-     */
-    periods[ROW] = periods[COL] = 0; // Establece como no circular
-
-    MPI_Cart_create(comm, 2, dims, periods, 0, &comm_2d);
+    // Obtenemos rank y coordenada
     MPI_Comm_rank(comm_2d, &myRank_2d);
     MPI_Cart_coords(comm_2d, myRank_2d, 2, myCoords);
-
+    
+    // Tamaño del bloque.
+    nlocal = N / ((int) sqrt(comm2dSize));
+    
     /* Se crea la sub-topologia con base en las filas */
     keep_dims[ROW] = 0;
     keep_dims[COL] = 1;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_row);
+    
+    MPI_Log(INFO, "Subgrilla de Filas creada por P[%d, %d]", 
+            myCoords[ROW], myCoords[COL]);
 
     /* Se crea la sub-topologia con base en las columnas */
     keep_dims[ROW] = 1;
     keep_dims[COL] = 0;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_col);
     
+    MPI_Log(INFO, "Subgrilla de Columnas creada por P[%d, %d]", 
+            myCoords[ROW], myCoords[COL]);
+    
     /*
      * -> Paso 1: Distribuir los elementos desde la Diagonal en el eje "y"
      */    
-    coords[COL] = myCoords[COL];
     coords[ROW] = myCoords[COL];
-    MPI_Cart_rank(comm_col, coords, &other_rank);
+    MPI_Cart_rank(comm_col, coords, &rootRank);
     
     /*
      * Operacion 1: Broadcast de columnas
      * Broadcast de las columnas de A (A*,j) a los procesos en la columna j
      * del mesh de procesos (p*,j).
      */
-    MPI_Log(INFO, "<%d> PASO 1 (BCAST) \n", myRank);
-    MPI_Bcast(A, N*nlocal,MPI_ELEMENT_T, other_rank, comm_col);
+    MPI_Bcast(A, N * nlocal, MPI_ELEMENT_T, rootRank, comm_col);
+    MPI_Log(INFO, "<%d, %d> PASO 1 (BCAST)", myCoords[ROW], myCoords[COL]);
 
     /*
-     * Refactorizar B
+     * Construir mensaje para el Scatter.
      */
-    element_t * Bx = GET_MEM(element_t, N*nlocal);
-    matrix_clear(Bx, N*nlocal);
-    int p, q, res;
-    res = 0;
-    for (p=0; p<nlocal; p++) {
-        for (q=0; q<nlocal; q++) {
-            Bx[res]=B[matrix_map(N, p, q)];
-            res++; 
-        }
-    }
-    for (p=0; p<nlocal; p++) {
-        for (q=nlocal; q<N; q++) {
-            Bx[res]=B[matrix_map(N, p, q)];
-            res++; 
-        }
-    }
+    element_t *Baux = GET_MEM(element_t, N * nlocal);
+    int pos = 0;
+    
+    for (k=0; k < N; k += nlocal)
+        for (i=0; i < nlocal; i++)
+            for (j=k; j < k + nlocal; j++)
+                Baux[pos++] = B[matrix_map(N, i, j)];
+    
     /*
-     * Operacion 2: Scatter de filas
+     * Operacion 2: Scatter de filas de B
      * One-to-all personalized broadcast de los elementos de la fila
      * B (Bi,*) a los procesos en la columna j del mesh de procesos
      * pj,*)
      */
-    MPI_Log(INFO, "<%d> PASO 1 (SCATTER) \n", myRank);
-    MPI_Scatter(Bx, nlocal*nlocal, MPI_ELEMENT_T, B, nlocal*nlocal, MPI_ELEMENT_T, 
-                other_rank, comm_col);
+    MPI_Scatter(Baux, nlocal * nlocal, MPI_ELEMENT_T, B, nlocal * nlocal, 
+                MPI_ELEMENT_T, rootRank, comm_col);
+    MPI_Log(INFO, "<%d, %d> PASO 1 (SCATTER)", myCoords[ROW], myCoords[COL]);
 
     /*
      * Multiplicación de matrices.
      * Se multiplica A por una parte de B y se guarda en px.
      */
+    MPI_Log(INFO, "Inicio de multiplicacion en P[%d, %d]", 
+            myCoords[ROW], myCoords[COL]);
     
     // Se reserva memoria para la multiplicación parcial
-    element_t * px = GET_MEM(element_t, dims[ROW]* N);
-    matrix_clear(px, dims[ROW]*N);
-    for (i=0; i < N; i++){
+    element_t *px = GET_MEM(element_t, nlocal * N);
+    matrix_clear(px, nlocal * N);
+    
+    for (i=0; i < N; i++) {
         for (j=0; j < nlocal; j++) {
             for (k=0; k < nlocal; k++) {
-                px[matrix_map(nlocal, i, j)] += A[matrix_map(nlocal, i, k)]* 
+                px[matrix_map(nlocal, i, j)] += A[matrix_map(nlocal, i, k)] * 
                                                 B[matrix_map(nlocal, k, j)];
             }
         }
     }
+    
+    MPI_Log(INFO, "Fin de multiplicacion en P[%d, %d]", 
+            myCoords[ROW], myCoords[COL]);
     
     /*
      * -> Paso 2: Enviamos el Resultado en la direccion "x".
@@ -326,19 +351,19 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      *    B (Bi,*) a los procesos en la columna j del mesh de procesos
      *    pj,*
      */
-    coords[COL] = myCoords[ROW];
     coords[ROW] = myCoords[ROW];
     
-    MPI_Cart_rank(comm_row, coords, &other_rank);
-    MPI_Log(INFO, "@%d@ PASO 2 (REDUCE)=> %d\n", myRank,(dims[ROW]*N));
-    MPI_Reduce(px, C, dims[ROW]* N, MPI_ELEMENT_T, MPI_SUM, other_rank, comm_row);
-    MPI_Log(INFO, "X%dX FIN \n", myRank);
+    MPI_Cart_rank(comm_row, coords, &rootRank);
+    MPI_Reduce(px, C, nlocal * N, MPI_ELEMENT_T, MPI_SUM, rootRank, comm_row);
+    
+    MPI_Log(INFO, "<%d, %d> PASO 2 (REDUCE)=> %d", 
+            myCoords[ROW], myCoords[COL], (nlocal * N));
     
     // Se liberan los comunicadores creados.
-    MPI_Comm_free(&comm_2d); 
     MPI_Comm_free(&comm_row);
     MPI_Comm_free(&comm_col);
     
-    // Se libera Variable auxiliar del producto.
+    // Se liberan variables auxiliares.
     free(px);
+    free(Baux);
 }
