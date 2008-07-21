@@ -1,1 +1,0 @@
-Linux sbd2.rec.una.py 2.6.23.1-42.fc8 #1 SMP Tue Oct 30 13:18:33 EDT 2007 x86_64 x86_64 x86_64 GNU/Linux
