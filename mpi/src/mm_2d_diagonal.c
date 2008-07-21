@@ -33,10 +33,10 @@ void liberar_procesos(int, int);
  ******************************************************************************/
 int main(int argc, char** argv) {
     int myRank   = -1; 	// Posicion dentro del comunicador
-    int commSize = 0;	// TamaÃ±o del comunicador
-    int matSize  = 0; 	// TamaÃ±o de la matriz
-    int blkSize  = 0; 	// TamaÃ±o del bloque
-    bool printMatrix;   // Bandera para impresión de matrices
+    int commSize = 0;	// Tamaño del comunicador
+    int matSize  = 0; 	// Tamaño de la matriz
+    int blkSize  = 0; 	// Tamaño del bloque
+    bool printMatrix;   // Bandera para impresion de matrices
     
     MPI_Log(INFO, "Antes de MPI_Init\n");
 
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     MPI_Log(INFO, "Entorno MPI inicializado\n");
 
     /*
-     * Obtenemos el tamaÃ±o del comunicador.
+     * Obtenemos el tamaño del comunicador.
      */
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
     MPI_Log(INFO, "Cantidad procesos: %d \n", commSize);
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
      */
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     
-    // Obtener tamaÃ±o de la matriz
+    // Obtener tamaño de la matriz
     if ((matSize = get_matrix_size(argc, argv)) < 0) {
         if (myRank != 0)
             MPI_Exit(1);
@@ -70,21 +70,21 @@ int main(int argc, char** argv) {
     }
     
     /*
-	 * Verificamos que el tamaÃ±o del comunicador
+	 * Verificamos que el tamaño del comunicador
 	 * sea adecuado.
 	 */
     if (!is_perfect_square(commSize)) {
         if (myRank != 0)
             MPI_Exit(1);
         else {
-            MPI_Log(FATAL, "TamaÃ±o del comunicador (%d) "
+            MPI_Log(FATAL, "Tamaño del comunicador (%d) "
                     "debe ser cuadrado perfecto", commSize);
         }
     }
     
     /*
-     * Además, la dimensión de las matrices debe
-     * ser divisible entre la raíz cuadrada del
+     * Ademas, la dimension de las matrices debe
+     * ser divisible entre la raiz cuadrada del
      * tamaño del comunicador (cantidad de procesos).
      */
     int commSizeSqrt = (int) sqrt(commSize);
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
             MPI_Exit(1);
         else {
             MPI_Log(FATAL, "Dimension de matriz (%d) debe ser divisible "
-                    "entre raiz cuadrada del tamaño del comunicador (%d)", 
+                    "entre raiz cuadrada del tamaÃ±o del comunicador (%d)", 
                     matSize, 
                     commSizeSqrt);
         }
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     
     /*
      * Establecemos la bandera que indica si se
-     * imprimirán o no las matrices.
+     * imprimir o no las matrices.
      */
     if (argc >= 3 && strcmp("p", argv[2]) == 0)
         printMatrix = true;
@@ -128,7 +128,8 @@ int main(int argc, char** argv) {
     // Cerar matriz C
     matrix_clear(matC, blkSize * matSize);
     MPI_Log(INFO, "Matrices A, B y C ya se crearon \n");
-
+    
+    MPI_Barrier(MPI_COMM_WORLD);
     soloPasa_proceso_0(myRank);
     MPI_Log(INFO, "FIN DEL PROCESO. FALTA IMPRIMIR MATRICES \n");
     if (printMatrix) {
@@ -140,6 +141,7 @@ int main(int argc, char** argv) {
     }    
     liberar_procesos(myRank, commSize);
     MPI_Log(INFO, "----------------------------------------------------\n");
+    MPI_Barrier(MPI_COMM_WORLD);
   	/*
   	 *  Proceso Principal del Algoritmo 2-D Diagonal
   	 */
@@ -152,8 +154,9 @@ int main(int argc, char** argv) {
     double endTime = MPI_Wtime();
 
     /*
-     * Impresión de las matrices.
+     * Impresion de las matrices.
      */
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Log(INFO, "FIN DEL PROCESO. FALTA IMPRIMIR MATRICES \n");
     soloPasa_proceso_0(myRank);
     
@@ -173,6 +176,7 @@ int main(int argc, char** argv) {
     print_parallel_time(initTime, endTime);
 
     liberar_procesos(myRank, commSize);
+    MPI_Barrier(MPI_COMM_WORLD);
     
     return (EXIT_SUCCESS);
 }
@@ -182,7 +186,7 @@ int main(int argc, char** argv) {
  ******************************************************************************/
 
 /*
- * Obtiene el tamaÃ±o de la matriz desde la linea de argumento. Si el
+ * Obtiene el tamaño de la matriz desde la linea de argumento. Si el
  * parametro es invalido retorna un numero negativo.
  */
 int get_matrix_size(int argc, char *argv[]) {
@@ -235,7 +239,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     int other_rank, coords[2];
     MPI_Comm comm_2d, comm_row, comm_col;
 
-    /* Se obtiene información del comunicador */
+    /* Se obtiene informacion del comunicador */
     MPI_Comm_size(comm, &npes);
     MPI_Comm_rank(comm, &myrank);
 
@@ -245,7 +249,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
 
     MPI_Log(INFO, "#%d# TOPOLOGIA VALORES:,%d ,%d, %d", myrank, nlocal,N,dims[ROW]);
     /* 
-     * Se crea la topología cartesian sobre la matriz de procesos.
+     * Se crea la topologia cartesian sobre la matriz de procesos.
      */
     periods[ROW] = periods[COL] = 0; // Establece como no circular
 
@@ -253,12 +257,12 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Comm_rank(comm_2d, &my2drank);
     MPI_Cart_coords(comm_2d, my2drank, 2, mycoords);
 
-    /* Se crea la sub-topología con base en las filas */
+    /* Se crea la sub-topologia con base en las filas */
     keep_dims[ROW] = 0;
     keep_dims[COL] = 1;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_row);
 
-    /* Se crea la sub-topología con base en las columnas */
+    /* Se crea la sub-topologia con base en las columnas */
     keep_dims[ROW] = 1;
     keep_dims[COL] = 0;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_col);
@@ -278,13 +282,32 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Bcast(A, N*nlocal,MPI_ELEMENT_T, other_rank, comm_col);
 
     /*
+     * Refactorizar B
+     */
+    element_t * Bx = GET_MEM(element_t, N*nlocal);
+    matrix_clear(Bx, N*nlocal);
+    int p, q, res;
+    res = 0;
+    for (p=0; p<nlocal; p++) {
+        for (q=0; q<nlocal; q++) {
+            Bx[res]=B[matrix_map(N, p, q)];
+            res++; 
+        }
+    }
+    for (p=0; p<nlocal; p++) {
+        for (q=nlocal; q<N; q++) {
+            Bx[res]=B[matrix_map(N, p, q)];
+            res++; 
+        }
+    }
+    /*
      * Operacion 2: Scatter de filas
      * One-to-all personalized broadcast de los elementos de la fila
      * B (Bi,*) a los procesos en la columna j del mesh de procesos
      * pj,*)
      */
     MPI_Log(INFO, "<%d> PASO 1 (SCATTER) \n", myrank);
-    MPI_Scatter(B, nlocal*nlocal, MPI_ELEMENT_T, B, nlocal*nlocal, MPI_ELEMENT_T, 
+    MPI_Scatter(Bx, nlocal*nlocal, MPI_ELEMENT_T, B, nlocal*nlocal, MPI_ELEMENT_T, 
                 other_rank, comm_col);
 
     /*
@@ -299,7 +322,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
         for (j=0; j < nlocal; j++) {
             for (k=0; k < nlocal; k++) {
                 px[matrix_map(nlocal, i, j)] += A[matrix_map(nlocal, i, k)]* 
-                                    B[matrix_map(nlocal, k, j)];
+                                                B[matrix_map(nlocal, k, j)];
             }
         }
     }
