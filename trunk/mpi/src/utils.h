@@ -64,7 +64,7 @@ char error_buffer[ERR_BUFF_SIZE + 1];
 								perror("Error  "); \
                             }; \
                             if (level == FATAL) \
-								MPI_Exit(errno); \
+								MPI_Abort(MPI_COMM_WORLD, errno); \
 						}
 
 /*
