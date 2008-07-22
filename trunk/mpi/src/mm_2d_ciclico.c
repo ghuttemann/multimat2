@@ -268,6 +268,8 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
      */
     int sent_tasks = 0;
 
+    MPI_Log(INFO, "Enviando primera tanda de tareas");
+    
     /* 
      * Enviar cíclicamente a los procesos.
      */
@@ -291,8 +293,8 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
         ++sent_tasks;
         --avail_tasks;
     }
-
     
+        
     /*
      * Comenzamos a recibir los resultados
      * calculados y continuar enviando las
@@ -303,12 +305,14 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
      */
     procRank = 1;
     
+    MPI_Log(INFO, "Ciclo Recibir-Enviar-Guardar en P0");
+    
     while (sent_tasks > 0) {
-
+        
         // Recibimos el resultado.
         rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
                       procRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-
+        
         MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
                 status.MPI_TAG, status.MPI_SOURCE, rc);
         
@@ -327,13 +331,13 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
             build_message(mensaje, matA, matB, matSize, blkSize,
                           tareas[matSize - avail_tasks].primero,
                           tareas[matSize - avail_tasks].segundo);
-
+            
             MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
 
             // Enviar mensaje.
             rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
                           procRank, matSize - avail_tasks, MPI_COMM_WORLD);
-
+            
             MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
                     matSize - avail_tasks, procRank, rc);
             
@@ -344,12 +348,12 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
             // Una tarea disponible menos
             --avail_tasks;
         }
-
+        
         // Guardamos el resultado.
         save_result(matC, matSize, blkSize, resultado,
                     tareas[status.MPI_TAG].primero,
                     tareas[status.MPI_TAG].segundo);
-
+        
         MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
         
         
@@ -414,6 +418,8 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
     if (myRank <= (matSize % (commSize - 1)))
         ++taskCount;
     
+    MPI_Log(INFO, "Ciclo Recibir-Multiplicar-Enviar en P%d", myRank);
+    
     /*
      * Recibir taskCount tareas
      */
@@ -422,7 +428,7 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
         // Recibir tarea.
         rc = MPI_Recv(mensaje, mensSize, MPI_ELEMENT_T, 0, MPI_ANY_TAG,
                       MPI_COMM_WORLD, &status);
-
+        
         MPI_Log(INFO, "Mensaje %d recibido por proceso %d (%d)",
                 status.MPI_TAG, myRank, rc);
         
