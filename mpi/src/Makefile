@@ -13,6 +13,13 @@ INC_DIR = -I"./include"
 OBJ_DIR = ./build
 BIN_DIR = ./bin
 
+##
+## Si se pasa como argumento DEBUG=no, entonces
+## no se realiza impresiones de depuración.
+##
+ifeq ($(DEBUG),no)
+  DEF = -DNODEBUG
+endif
 
 ##
 ## Variable que contiene la lista de modulos que componen nuestro "proyecto"
@@ -40,43 +47,43 @@ all: $(BIN_DIR)/mm_2d_aleatorio $(BIN_DIR)/mm_2d_ciclico \
 ## ser exhaustivas y transitivas: a->b->c...).
 ##
 $(OBJ_DIR)/utils.o: utils.c utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/matrix.o: matrix.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/mm_2d_aleatorio.o: mm_2d_aleatorio.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/mm_2d_ciclico.o: mm_2d_ciclico.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/mm_cannon.o: mm_cannon.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/mm_dns.o: mm_dns.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 $(OBJ_DIR)/mm_2d_diagonal.o: mm_2d_diagonal.c matrix.h utils.h
-	$(CC) $(FLAGS) -c $< -o $@ $(INC_DIR)
+	$(CC) $(FLAGS) -c $< -o $@ $(DEF) $(INC_DIR)
 
 ##
 ## Con este target construimos el proyecto
 ##
 $(BIN_DIR)/mm_2d_aleatorio: $(modulos) $(mod_aleatorio)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_aleatorio) $(LIB_DIR) $(LIBS)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_aleatorio) $(DEF) $(LIB_DIR) $(LIBS)
 
 $(BIN_DIR)/mm_2d_ciclico: $(modulos) $(mod_ciclico)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_ciclico) $(LIB_DIR) $(LIBS)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_ciclico) $(DEF) $(LIB_DIR) $(LIBS)
 
 $(BIN_DIR)/mm_cannon: $(modulos) $(mod_cannon)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_cannon) $(LIB_DIR) $(LIBS)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_cannon) $(DEF) $(LIB_DIR) $(LIBS)
 
 $(BIN_DIR)/mm_dns: $(modulos) $(mod_dns)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_dns) $(LIB_DIR) $(LIBS)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_dns) $(DEF) $(LIB_DIR) $(LIBS)
 
 $(BIN_DIR)/mm_2d_diagonal: $(modulos) $(mod_diagonal)
-	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_diagonal) $(LIB_DIR) $(LIBS)
+	$(CC) $(FLAGS) -o $@ $(modulos) $(mod_diagonal) $(DEF) $(LIB_DIR) $(LIBS)
 
 ##
 ## El target clean suele existir para "remover" los archivos temporales
