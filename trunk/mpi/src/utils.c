@@ -45,16 +45,16 @@ bool is_perfect_cube(int num) {
 	return false;
 }
 
-void print_parallel_time(double initTime, double endTime) {
+void print_parallel_time(double initTime, double endTime, int rank) {
     char proc_name[MPI_MAX_PROCESSOR_NAME + 1];
     int length;
     
     // Obtenemos el nombre del procesador.
     MPI_Get_processor_name(proc_name, &length);
     
-    printf("\n\n%s\n\n  Tiempo %s: %f (%s)  \n\n%s\n",
+    printf("\n\n%s\n\n  Tiempo %s(%d): %f (%s)  \n\n%s\n",
         "#####################################################################",
-        proc_name, endTime - initTime,
+        proc_name, rank, endTime - initTime,
         MPI_WTIME_IS_GLOBAL ? "GLOBAL" : "LOCAL",
         "#####################################################################");
 }

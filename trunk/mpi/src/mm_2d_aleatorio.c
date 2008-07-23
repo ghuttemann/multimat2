@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
         matrix_clear(matC, matSize * matSize);
         
         
-        MPI_Log(INFO, "Matrices A, B y C creadas");
+        MPI_Debug(INFO, "Matrices A, B y C creadas");
         
         double initTime = MPI_Wtime();
         
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 			build_message(mensaje, matA, matB, matSize, blkSize,
 						tareas[k].primero, tareas[k].segundo);
             
-            MPI_Log(INFO, "Mensaje %d construido", k);
+            MPI_Debug(INFO, "Mensaje %d construido", k);
 
 			if (destino <= maximo) {
 				/*
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 				rc = MPI_Send(mensaje, buffSize, MPI_ELEMENT_T,
                             destino, k, MPI_COMM_WORLD);
 
-				MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)", k, destino, rc);
+				MPI_Debug(INFO, "Mensaje %d enviado a proceso %d (%d)", k, destino, rc);
 
 				++destino;
 			}
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 				rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
                             MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-				MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
+				MPI_Debug(INFO, "Resultado %d recibido de proceso %d (%d)",
 						status.MPI_TAG, status.MPI_SOURCE, rc);
 
 				// Guardamos el resultado.
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
                             tareas[status.MPI_TAG].primero, 
                             tareas[status.MPI_TAG].segundo);
                 
-				MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
+				MPI_Debug(INFO, "Resultado %d guardado", status.MPI_TAG);
 
 				/*
 				 * Enviamos otra tarea al proceso que acaba de responder.
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
                 rc = MPI_Send(mensaje, buffSize, MPI_ELEMENT_T, status.MPI_SOURCE,
                             k, MPI_COMM_WORLD);
 
-                MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)", k, status.MPI_SOURCE, rc);
+                MPI_Debug(INFO, "Mensaje %d enviado a proceso %d (%d)", k, status.MPI_SOURCE, rc);
 			}
 		}
         
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 			rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
                         MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-			MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
+			MPI_Debug(INFO, "Resultado %d recibido de proceso %d (%d)",
 					status.MPI_TAG, status.MPI_SOURCE, rc);
 
 			// Guardamos el resultado.
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
                         tareas[status.MPI_TAG].primero, 
                         tareas[status.MPI_TAG].segundo);
             
-			MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
+			MPI_Debug(INFO, "Resultado %d guardado", status.MPI_TAG);
 		}
         
         MPI_Log(INFO, "Enviar mensajes de finalizacion a procesos");
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
         for (k=1; k <= maximo; k++) {
 			rc = MPI_Send(mensaje, buffSize, MPI_ELEMENT_T, k, endTag, MPI_COMM_WORLD);
             
-            MPI_Log(INFO, "Mensaje de finalizacion para proceso %d (%d)", k, rc);
+            MPI_Debug(INFO, "Mensaje de finalizacion para proceso %d (%d)", k, rc);
         }
         
         double endTime = MPI_Wtime();
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
         free(matC);
         free(tareas);
         
-        print_parallel_time(initTime, endTime);
+        print_parallel_time(initTime, endTime, 0);
 	}
 	else if (myRank <= maximo) {
 		/*
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
 		rc = MPI_Recv(mensaje, buffSize, MPI_ELEMENT_T, 0, MPI_ANY_TAG,
                     MPI_COMM_WORLD, &status);
         
-        MPI_Log(INFO, "Mensaje %d recibido por proceso %d (%d)", 
+        MPI_Debug(INFO, "Mensaje %d recibido por proceso %d (%d)", 
                 status.MPI_TAG, myRank, rc);
 
 		// Iterar hasta recibir el mensaje de terminación.
@@ -312,20 +312,20 @@ int main(int argc, char *argv[]) {
 			// Multiplicar bloque.
 			multiply(mensaje, resultado, matSize, blkSize);
             
-            MPI_Log(INFO, "Resultado %d calculado", status.MPI_TAG);
+            MPI_Debug(INFO, "Resultado %d calculado", status.MPI_TAG);
 
 			// Enviar resultado a proceso maestro.
 			rc = MPI_Send(resultado, resultSize, MPI_ELEMENT_T, 0,
                         status.MPI_TAG, MPI_COMM_WORLD);
             
-            MPI_Log(INFO, "Resultado %d enviado a proceso %d (%d)", 
+            MPI_Debug(INFO, "Resultado %d enviado a proceso %d (%d)", 
                     status.MPI_TAG, 0, rc);
 
 			// Esperar otro bloque o mensaje de finalizacion.
 			rc = MPI_Recv(mensaje, buffSize, MPI_ELEMENT_T, 0, MPI_ANY_TAG,
                         MPI_COMM_WORLD, &status);
             
-            MPI_Log(INFO, "Mensaje %d recibido por proceso %d (%d)", 
+            MPI_Debug(INFO, "Mensaje %d recibido por proceso %d (%d)", 
                     status.MPI_TAG, myRank, rc);
 		}
         

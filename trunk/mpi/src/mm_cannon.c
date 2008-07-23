@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     matrix_load(matC, blkSize, C);
     
     
-    MPI_Log(INFO, "Matrices A, B y C creadas");
+    MPI_Debug(INFO, "Matrices A, B y C creadas");
     
     // Inicio control tiempo.
     double initTime = MPI_Wtime();
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     free(matB);
     free(matC);
     
-    print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime, myRank);
     
     // Terminación
     MPI_Exit(EXIT_SUCCESS);
@@ -188,7 +188,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Alineamiento inicial de matriz A en proceso [%d, %d] (%d %d)", 
+    MPI_Debug(INFO, "Alineamiento inicial de matriz A en proceso [%d, %d] (%d %d)", 
             myCoords[0], myCoords[1], rc1, rc2);
 
     /* Realizamos el alineamiento inicial de la matriz B */
@@ -196,7 +196,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Alineamiento inicial de matriz B en proceso [%d, %d] (%d %d)", 
+    MPI_Debug(INFO, "Alineamiento inicial de matriz B en proceso [%d, %d] (%d %d)", 
             myCoords[0], myCoords[1], rc1, rc2);
 
     
@@ -211,7 +211,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     for (i = 0; i < dims[0]; i++) {
         matrix_mult(A, B, C, nlocal);
         
-        MPI_Log(INFO, "Multiplicacion C=A*B en proceso [%d, %d]", 
+        MPI_Debug(INFO, "Multiplicacion C=A*B en proceso [%d, %d]", 
                 myCoords[0], myCoords[1]);
 
         /* 
@@ -221,7 +221,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
         rc1 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, leftRank, 1, 
                                    rightRank, 1, comm_2d, &status);
         
-        MPI_Log(INFO, "Corrimiento de matriz A en proceso [%d, %d] (%d)", 
+        MPI_Debug(INFO, "Corrimiento de matriz A en proceso [%d, %d] (%d)", 
                 myCoords[0], myCoords[1], rc1);
 
         /* 
@@ -231,7 +231,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
         rc1 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, upRank, 1, 
                                    downRank, 1, comm_2d, &status);
         
-        MPI_Log(INFO, "Corrimiento de matriz B en proceso [%d, %d] (%d)", 
+        MPI_Debug(INFO, "Corrimiento de matriz B en proceso [%d, %d] (%d)", 
                 myCoords[0], myCoords[1], rc1);
     }
 
@@ -240,7 +240,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     rc2 = MPI_Sendrecv_replace(A, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Restaurar distribucion inicial de matriz A en proceso [%d, %d] (%d %d)", 
+    MPI_Debug(INFO, "Restaurar distribucion inicial de matriz A en proceso [%d, %d] (%d %d)", 
             myCoords[0], myCoords[1], rc1, rc2);
 
     /* Restauramos la distribución original de la matriz B */
@@ -248,7 +248,7 @@ void cannon_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     rc2 = MPI_Sendrecv_replace(B, nlocal*nlocal, MPI_ELEMENT_T, shiftDest, 1, 
                                shiftSource, 1, comm_2d, &status);
     
-    MPI_Log(INFO, "Restaurar distribucion inicial de matriz B en proceso [%d, %d] (%d %d)", 
+    MPI_Debug(INFO, "Restaurar distribucion inicial de matriz B en proceso [%d, %d] (%d %d)", 
             myCoords[0], myCoords[1], rc1, rc2);
 
     /* Liberamos el comunicador 2D */

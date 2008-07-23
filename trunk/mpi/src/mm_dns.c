@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     // Configuramos la topología cartesiana
     dims[DIM_I] = dims[DIM_J] = dims[DIM_K] = (int) cbrt(commSize);
     
-    MPI_Log(INFO, "Procesos en la grilla (%d, %d, %d)", 
+    MPI_Debug(INFO, "Procesos en la grilla (%d, %d, %d)", 
             dims[DIM_I], dims[DIM_J], dims[DIM_K]);
     
     // No necesitamos que la comunicación sea cíclica
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     free(matC);
     free(matResult);
     
-    print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime, myRank);
     
     // Liberamos el comunicador 3D
     MPI_Comm_free(&comm_3d);
@@ -252,7 +252,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
         // Enviar A
         MPI_Send(A, nlocal * nlocal, MPI_ELEMENT_T, destRank, 1, comm_3d);
         
-        MPI_Log(INFO, "P[%d, %d, %d] envia A a P[%d, %d, %d]", 
+        MPI_Debug(INFO, "P[%d, %d, %d] envia A a P[%d, %d, %d]", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K],
                 destCoords[DIM_I], destCoords[DIM_J], destCoords[DIM_K]);
     }
@@ -270,7 +270,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
         // Recibir A
         MPI_Recv(A, nlocal * nlocal, MPI_ELEMENT_T, sourceRank, 1, comm_3d, &status);
         
-        MPI_Log(INFO, "P[%d, %d, %d] recibe A de P[%d, %d, %d]", 
+        MPI_Debug(INFO, "P[%d, %d, %d] recibe A de P[%d, %d, %d]", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K],
                 sourceCoords[DIM_I], sourceCoords[DIM_J], sourceCoords[DIM_K]);
     }
@@ -289,7 +289,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
         // Enviar B
         MPI_Send(B, nlocal * nlocal, MPI_ELEMENT_T, destRank, 1, comm_3d);
         
-        MPI_Log(INFO, "P[%d, %d, %d] envia B a P[%d, %d, %d]", 
+        MPI_Debug(INFO, "P[%d, %d, %d] envia B a P[%d, %d, %d]", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K],
                 destCoords[DIM_I], destCoords[DIM_J], destCoords[DIM_K]);
     }
@@ -307,7 +307,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
         // Recibir B
         MPI_Recv(B, nlocal * nlocal, MPI_ELEMENT_T, sourceRank, 1, comm_3d, &status);
         
-        MPI_Log(INFO, "P[%d, %d, %d] recibe B de P[%d, %d, %d]", 
+        MPI_Debug(INFO, "P[%d, %d, %d] recibe B de P[%d, %d, %d]", 
                 myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K],
                 sourceCoords[DIM_I], sourceCoords[DIM_J], sourceCoords[DIM_K]);
     }
@@ -333,7 +333,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
     MPI_Comm comm_cols;
     MPI_Cart_sub(comm_3d, remain_dims_cols, &comm_cols);
     
-    MPI_Log(INFO, "Subgrilla de Columnas creada por P[%d, %d, %d]",
+    MPI_Debug(INFO, "Subgrilla de Columnas creada por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
@@ -354,7 +354,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      */
     MPI_Bcast(A, nlocal * nlocal, MPI_ELEMENT_T, rootColsRank, comm_cols);
     
-    MPI_Log(INFO, "Bcast(%d) de A en columnas ejecutado por P[%d, %d, %d]", 
+    MPI_Debug(INFO, "Bcast(%d) de A en columnas ejecutado por P[%d, %d, %d]", 
             rootColsRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
@@ -375,7 +375,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
     MPI_Comm comm_rows;
     MPI_Cart_sub(comm_3d, remain_dims_rows, &comm_rows);
     
-    MPI_Log(INFO, "Subgrilla de Filas creada por P[%d, %d, %d]",
+    MPI_Debug(INFO, "Subgrilla de Filas creada por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
@@ -396,7 +396,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      */
     MPI_Bcast(B, nlocal * nlocal, MPI_ELEMENT_T, rootRowsRank, comm_rows);
     
-    MPI_Log(INFO, "Bcast(%d) de B en filas ejecutado por P[%d, %d, %d]", 
+    MPI_Debug(INFO, "Bcast(%d) de B en filas ejecutado por P[%d, %d, %d]", 
             rootRowsRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     /*
@@ -404,12 +404,12 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      *
      * Multiplicar las submatrices A y B.
      */
-    MPI_Log(INFO, "Inicio de multiplicacion por P[%d, %d, %d]",
+    MPI_Debug(INFO, "Inicio de multiplicacion por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     matrix_mult(A, B, C, nlocal);
     
-    MPI_Log(INFO, "Fin de multiplicacion por P[%d, %d, %d]",
+    MPI_Debug(INFO, "Fin de multiplicacion por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
@@ -434,7 +434,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
     MPI_Comm comm_reduction;
     MPI_Cart_sub(comm_3d, remain_dims_reduction, &comm_reduction);
     
-    MPI_Log(INFO, "Subgrilla para Reduction creada por P[%d, %d, %d]",
+    MPI_Debug(INFO, "Subgrilla para Reduction creada por P[%d, %d, %d]",
             myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     
@@ -453,7 +453,7 @@ void dns_matrix_multiply(int nlocal, element_t *A, element_t *B, element_t *C,
      */
     MPI_Reduce(C, R, nlocal * nlocal, MPI_ELEMENT_T, MPI_SUM, rootReductionRank, comm_reduction);
     
-    MPI_Log(INFO, "Reduce(%d) realizado por P[%d, %d, %d]", 
+    MPI_Debug(INFO, "Reduce(%d) realizado por P[%d, %d, %d]", 
             rootReductionRank, myCoords[DIM_I], myCoords[DIM_J], myCoords[DIM_K]);
     
     // Liberar comunicadores

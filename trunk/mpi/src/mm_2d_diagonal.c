@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
     if (myCoords[ROW] == myCoords[COL])
         matrix_clear(matC, blkSize * matSize);
     
-    MPI_Log(INFO, "Matrices A, B y C ya se crearon");
+    MPI_Debug(INFO, "Matrices A, B y C ya se crearon");
 
     if (printMatrix) {
         MPI_Barrier(MPI_COMM_WORLD);
@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
     free(matC);
     
     // Impresión de tiempos.
-    print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime, myRank);
     
     // Termina MPI.
     MPI_Exit(EXIT_SUCCESS);
@@ -275,7 +275,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     keep_dims[COL] = 1;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_row);
     
-    MPI_Log(INFO, "Subgrilla de Filas creada por P[%d, %d]", 
+    MPI_Debug(INFO, "Subgrilla de Filas creada por P[%d, %d]", 
             myCoords[ROW], myCoords[COL]);
 
     /* Se crea la sub-topologia con base en las columnas */
@@ -283,7 +283,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     keep_dims[COL] = 0;
     MPI_Cart_sub(comm_2d, keep_dims, &comm_col);
     
-    MPI_Log(INFO, "Subgrilla de Columnas creada por P[%d, %d]", 
+    MPI_Debug(INFO, "Subgrilla de Columnas creada por P[%d, %d]", 
             myCoords[ROW], myCoords[COL]);
     
     /*
@@ -298,7 +298,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      * del mesh de procesos (p*,j).
      */
     MPI_Bcast(A, N * nlocal, MPI_ELEMENT_T, rootRank, comm_col);
-    MPI_Log(INFO, "<%d, %d> PASO 1 (BCAST)", myCoords[ROW], myCoords[COL]);
+    MPI_Debug(INFO, "<%d, %d> PASO 1 (BCAST)", myCoords[ROW], myCoords[COL]);
 
     /*
      * Construir mensaje para el Scatter.
@@ -319,13 +319,13 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
      */
     MPI_Scatter(Baux, nlocal * nlocal, MPI_ELEMENT_T, B, nlocal * nlocal, 
                 MPI_ELEMENT_T, rootRank, comm_col);
-    MPI_Log(INFO, "<%d, %d> PASO 1 (SCATTER)", myCoords[ROW], myCoords[COL]);
+    MPI_Debug(INFO, "<%d, %d> PASO 1 (SCATTER)", myCoords[ROW], myCoords[COL]);
 
     /*
      * Multiplicación de matrices.
      * Se multiplica A por una parte de B y se guarda en px.
      */
-    MPI_Log(INFO, "Inicio de multiplicacion en P[%d, %d]", 
+    MPI_Debug(INFO, "Inicio de multiplicacion en P[%d, %d]", 
             myCoords[ROW], myCoords[COL]);
     
     // Se reserva memoria para la multiplicación parcial
@@ -341,7 +341,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
         }
     }
     
-    MPI_Log(INFO, "Fin de multiplicacion en P[%d, %d]", 
+    MPI_Debug(INFO, "Fin de multiplicacion en P[%d, %d]", 
             myCoords[ROW], myCoords[COL]);
     
     /*
@@ -356,7 +356,7 @@ void diagonal_matrix_multiply(int N, element_t *A, element_t *B, element_t *C,
     MPI_Cart_rank(comm_row, coords, &rootRank);
     MPI_Reduce(px, C, nlocal * N, MPI_ELEMENT_T, MPI_SUM, rootRank, comm_row);
     
-    MPI_Log(INFO, "<%d, %d> PASO 2 (REDUCE)=> %d", 
+    MPI_Debug(INFO, "<%d, %d> PASO 2 (REDUCE)=> %d", 
             myCoords[ROW], myCoords[COL], (nlocal * N));
     
     // Se liberan los comunicadores creados.

@@ -229,7 +229,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
     matrix_fill(matA, matSize * matSize);
     matrix_fill(matB, matSize * matSize);
     matrix_clear(matC, matSize * matSize);
-    MPI_Log(INFO, "Matrices A, B y C creadas");
+    MPI_Debug(INFO, "Matrices A, B y C creadas");
 
     // Inicio control tiempo.
     double initTime = MPI_Wtime();
@@ -280,13 +280,13 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
                       tareas[matSize - avail_tasks].primero,
                       tareas[matSize - avail_tasks].segundo);
 
-        MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
+        MPI_Debug(INFO, "Mensaje %d construido", matSize - avail_tasks);
 
         // Enviar mensaje.
         rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
                       procRank, matSize - avail_tasks, MPI_COMM_WORLD);
 
-        MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
+        MPI_Debug(INFO, "Mensaje %d enviado a proceso %d (%d)",
                 matSize - avail_tasks, procRank, rc);
 
         // Actualizar contadores
@@ -313,7 +313,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
         rc = MPI_Recv(resultado, resultSize, MPI_ELEMENT_T,
                       procRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         
-        MPI_Log(INFO, "Resultado %d recibido de proceso %d (%d)",
+        MPI_Debug(INFO, "Resultado %d recibido de proceso %d (%d)",
                 status.MPI_TAG, status.MPI_SOURCE, rc);
         
         
@@ -332,13 +332,13 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
                           tareas[matSize - avail_tasks].primero,
                           tareas[matSize - avail_tasks].segundo);
             
-            MPI_Log(INFO, "Mensaje %d construido", matSize - avail_tasks);
+            MPI_Debug(INFO, "Mensaje %d construido", matSize - avail_tasks);
 
             // Enviar mensaje.
             rc = MPI_Send(mensaje, mensSize, MPI_ELEMENT_T,
                           procRank, matSize - avail_tasks, MPI_COMM_WORLD);
             
-            MPI_Log(INFO, "Mensaje %d enviado a proceso %d (%d)",
+            MPI_Debug(INFO, "Mensaje %d enviado a proceso %d (%d)",
                     matSize - avail_tasks, procRank, rc);
             
             
@@ -354,7 +354,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
                     tareas[status.MPI_TAG].primero,
                     tareas[status.MPI_TAG].segundo);
         
-        MPI_Log(INFO, "Resultado %d guardado", status.MPI_TAG);
+        MPI_Debug(INFO, "Resultado %d guardado", status.MPI_TAG);
         
         
         /*
@@ -388,7 +388,7 @@ void procesoMaestro(int matSize, int blkSize, int commSize, bool printMatrix) {
     free(mensaje);
     free(resultado);
 
-    print_parallel_time(initTime, endTime);
+    print_parallel_time(initTime, endTime, 0);
 }
 
 /*
@@ -429,7 +429,7 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
         rc = MPI_Recv(mensaje, mensSize, MPI_ELEMENT_T, 0, MPI_ANY_TAG,
                       MPI_COMM_WORLD, &status);
         
-        MPI_Log(INFO, "Mensaje %d recibido por proceso %d (%d)",
+        MPI_Debug(INFO, "Mensaje %d recibido por proceso %d (%d)",
                 status.MPI_TAG, myRank, rc);
         
         // Cerar matriz resultado
@@ -438,13 +438,13 @@ void procesoEsclavo(int matSize, int blkSize, int commSize, int myRank) {
         // Multiplicar bloque.
         multiply(mensaje, resultado, matSize, blkSize);
 
-        MPI_Log(INFO, "Resultado %d calculado", status.MPI_TAG);
+        MPI_Debug(INFO, "Resultado %d calculado", status.MPI_TAG);
 
         // Enviar resultado a proceso maestro.
         rc = MPI_Send(resultado, resultSize, MPI_ELEMENT_T, 0,
                       status.MPI_TAG, MPI_COMM_WORLD);
 
-        MPI_Log(INFO, "Resultado %d enviado a proceso %d (%d)",
+        MPI_Debug(INFO, "Resultado %d enviado a proceso %d (%d)",
                 status.MPI_TAG, 0, rc);
     }
     

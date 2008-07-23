@@ -68,6 +68,28 @@ char error_buffer[ERR_BUFF_SIZE + 1];
 						}
 
 /*
+ * Idem que la macro LOG, solo que se utiliza
+ * MPI_Exit para terminar el programa.
+ */
+#ifdef NODEBUG
+#define MPI_Debug(level, ...)
+#else
+#define MPI_Debug(level, ...)	{ \
+                            sprintf(error_buffer, "%s: ", err_str(level)), \
+                            sprintf(error_buffer + strlen(error_buffer), __VA_ARGS__), \
+                            sprintf(error_buffer + strlen(error_buffer), "\n"), \
+							fprintf(stderr, error_buffer, strlen(error_buffer)); \
+                            if (level == FATAL || level == WARN) { \
+                            	fprintf(stderr, "Archivo: %s\n", __FILE__); \
+								fprintf(stderr, "Linea  : %d\n", __LINE__); \
+								perror("Error  "); \
+                            }; \
+                            if (level == FATAL) \
+								MPI_Abort(MPI_COMM_WORLD, errno); \
+						}
+#endif
+
+/*
  * Asigna un bloque de memoria y
  * verifica los posibles fallos.
  */
@@ -131,7 +153,7 @@ bool is_perfect_cube(int num);
  * Imprime el tiempo transcurrido para un
  * programa MPI.
  */
-void print_parallel_time(double initTime, double endTime);
+void print_parallel_time(double initTime, double endTime, int rank);
 
 /*
  * Función wrapper sobre la función "fopen", para el 
