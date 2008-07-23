@@ -1,0 +1,36 @@
+mpirun -hosts 9 bnunez 1 mrodas 1 sarevalos 1 cparra 1 ghuttemann 1 rbenitez 1 dme
+dina 1 dihara 1 pveron 1 -priority 4:5 \\gha-nb\bin\mm_2d_ciclico.exe 1024
+
+8/9 procesos
+
+ciclico	1024	23.389349	x
+cannon	1023	4.494574	x
+diagon	1023	2.892769	x
+dns	1024	2.958956	x
+
+ciclico	2025	126.396691	x
+cannon	2025	24.622106	x
+diagon	2025	21.257237	x
+dns	2024	28.169860	x
+
+ciclico	4096	796.014832	x
+cannon	4095	193.747970	x
+diagon	4095	187.140476	x
+dns	4096	680.917481	x
+
+25/27 procesos
+
+ciclico	1024	28.056537	x
+cannon	1025	79.566208	x
+diagon	1025	59.492363	x
+dns	1023	41.013299	x
+
+ciclico	2025	253.563630
+cannon	2025	x
+diagon	2025	x
+dns	2024	x
+
+ciclico	4096	1267.621241
+cannon	4095	x
+diagon	4095	x
+dns	4096	x
