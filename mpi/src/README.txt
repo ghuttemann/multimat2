@@ -1,3 +1,13 @@
+Código fuente y binarios
+========================
+
+Cada código fuente comienza con el nombre "mm_" (matrix multiplication) y luego tiene el nombre
+del algoritmo correspondiente. En "include" y "lib" se encuentran los archivos de cabeceras y
+librerías, respectivamente, para la compilación en Windows.
+
+En "bin" se encuentran los binarios y en "build" los códigos objeto.
+
+
 Compilación
 ===========
 
