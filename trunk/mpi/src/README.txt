@@ -27,9 +27,9 @@ Ejecución
 
 La ejecución fue probada en Windows solamente, con MPICH NT 1.2.5, el cual necesita estar
 instalado para que la misma pueda realizarse. Además, si no tiene instalado Cygwin, debe
-copiar la librería "lib\cygwin1.dll" en "C:\WINDOWS\system32".
+copiar la librería "cygwin\cygwin1.dll" en "C:\WINDOWS\system32".
 
-Si desea ejecutar en Linux, necesita recompilar los binarios. La librería de "lib\cygwin1.dll"
+Si desea ejecutar en Linux, necesita recompilar los binarios. La librería de "cygwin\cygwin1.dll"
 ya no es necesaria.
 
 Para ejecutar los programas localmente en una máquina:
